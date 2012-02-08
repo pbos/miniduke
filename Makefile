@@ -1,9 +1,9 @@
-all:
+all: minijava.y minijava.l
 	bison -d minijava.y
 	flex minijava.l
 	gcc -Wall -o miniduke lex.yy.c minijava.tab.c
 
-calc:
+calc: calc.y calc.l
 	bison -d calc.y
 	flex calc.l
 	gcc -Wall -o calc lex.yy.c calc.tab.c

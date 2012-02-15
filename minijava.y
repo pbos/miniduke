@@ -1,3 +1,8 @@
+%{
+	#include <stdio.h>
+	extern int yylex();
+	void yyerror(const char *s) { printf("ERROR: %s\n", s); }
+%}
 %union{
 	char *id;
 }
@@ -45,75 +50,78 @@
 %token SCOLON /* ; */
 %token COMMA /* , */
 %token PERIOD /* . */
-%token COLON /* , */
 
 /* identifier/numbers */
 %token <id> id
-%token <num> int_lit
+%token <id> int_lit
 
 %start Program
+
 %%
 
-Program: MainClass ClassList
+Program: MainClass ClassList {puts("Program");}
 
-MainClass: CLASS id LBLOCK PUBLIC STATIC VOID id LPAREN STRING LBRACK RBRACK id LBLOCK VarList StmtList
+MainClass: CLASS id LBLOCK PUBLIC STATIC VOID id LPAREN STRING LBRACK RBRACK id LBLOCK VarList StmtList {puts("MainClass");}
 
 ClassList: ClassList ClassDecl
 	| /* empty */
 
-ClassDecl: CLASS id LBLOCK VarList MethodList RBLOCK
+ClassDecl: CLASS id LBLOCK VarList MethodList RBLOCK {puts("ClassDecl");}
 
 VarList: VarList VarDecl
 	| /* empty */
 
-VarDecl: Type id SCOLON
+VarDecl: Type id SCOLON {puts("VarDecl");}
 
 MethodList: MethodList MethodDecl
 	| /* empty */
 
-MethodDecl: PUBLIC Type id LPAREN FormalList RPAREN LBLOCK VarList StmtList RETURN Exp SCOLON RBLOCK
+MethodDecl: PUBLIC Type id LPAREN FormalList RPAREN LBLOCK VarList StmtList RETURN Exp SCOLON RBLOCK {puts("VarDecl");}
 
-FormalList: Type id FormalRest
+FormalList: Type id FormalRest {puts("FormalList");}
 	| /* empty */
 
-FormalRest: FormalRest COMMA Type id
+FormalRest: FormalRest COMMA Type id {puts("FormalRest");}
 	| /* empty */
 
-Type: INT LBRACK RBRACK
-	| BOOL
-	| INT
-	| id
+Type: INT LBRACK RBRACK {puts("Type:INT[]");}
+	| BOOL {puts("Type:BOOL");}
+	| INT {puts("Type:INT");}
+	| id {puts("Type:id");}
 
 StmtList: StmtList Stmt
-	|
-
-Stmt: LBLOCK StmtList RBLOCK
-	| IF LPAREN Exp RPAREN Stmt ELSE Stmt
-	| WHILE LPAREN Exp RPAREN Stmt
-	| SYSO LPAREN Exp RPAREN COLON
-
-Exp: Exp Op Exp
-	| Exp LBRACK Exp RBRACK
-	| Exp PERIOD LENGTH
-	| Exp PERIOD id LPAREN ExpList RPAREN
-	| int_lit
-	| TRUE
-	| FALSE
-	| id
-	| THIS
-	| NEW INT LBRACK Exp RBRACK
-	| NEW id LPAREN RPAREN
-	| NOT Exp
-	| LPAREN Exp RPAREN
-
-Op: CONJ
-	| LESS
-	| PLUS
-	| MINUS
-	| MULT
-
-ExpList: Exp ExpRest
 	| /* empty */
 
-ExpRest: COMMA Exp
+Stmt: LBLOCK StmtList RBLOCK {puts("Stmt:{Stmt*}");}
+	| IF LPAREN Exp RPAREN Stmt ELSE Stmt {puts("Stmt:if-else");}
+	| WHILE LPAREN Exp RPAREN Stmt {puts("Stmt:while");}
+	| SYSO LPAREN Exp RPAREN SCOLON {puts("Stmt:SYSO");}
+
+Exp: Exp Op Exp {puts("Exp:ExpOpExp");}
+	| Exp LBRACK Exp RBRACK {puts("Exp:Exp[Exp]");} // What should this do?
+	| Exp PERIOD LENGTH {puts("Exp:Exp.length");}
+	| Exp PERIOD id LPAREN ExpList RPAREN {puts("Exp:Exp.id(..)");}
+	| int_lit {puts("Exp:int_lit");}
+	| TRUE {puts("Exp:true");}
+	| FALSE {puts("Exp:false");}
+	| id {puts("Exp:id");}
+	| THIS {puts("Exp:this");}
+	| NEW INT LBRACK Exp RBRACK {puts("Exp:newint[]");}
+	| NEW id LPAREN RPAREN {puts("Exp:newid()");}
+	| NOT Exp {puts("Exp:!Exp");}
+	| LPAREN Exp RPAREN {puts("Exp:(Exp)");}
+
+Op: CONJ {puts("Exp:&&");}
+	| LESS {puts("Exp:<");}
+	| PLUS {puts("Exp:+");}
+	| MINUS {puts("Exp:-");}
+	| MULT {puts("Exp:*");}
+
+ExpList: Exp ExpRestList {puts("ExpList");}
+	| /* empty */
+
+ExpRestList: ExpRestList ExpRest
+	| /* empty */
+
+ExpRest: COMMA Exp {puts("ExpRest");}
 

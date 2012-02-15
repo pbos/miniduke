@@ -1,55 +1,61 @@
 %{
 #include "minijava.tab.h"
-#define TOKEN(t) printf("%s ", #t);
-#define OPER(t) printf("op %s", #t);
-#define ID(t) printf("ID(%s) ", t);
-#define NUM(t) printf("NUM(%s) ", t);
 %}
 
 %%
 
  /* ignore whitespace */
 [ \t\n]+	;
- /* ignore comments */
-\/\/.*$	;
-\/\*.*\*\/ ;
-"("	TOKEN(LPAREN)
-")"	TOKEN(RPAREN)
-"["	TOKEN(LBRACK)
-"]"	TOKEN(RBRACK)
-"{"	TOKEN(LCBRACK)
-"}"	TOKEN(RCBRACK)
-";"	TOKEN(SEMICOLON)
-"."	TOKEN(PERIOD)
-","	TOKEN(COMMA)
-  /* operators */
-"<="	OPER(LEQ)
-">="	OPER(GEQ)
-"<"	OPER(LESS)
-">"	OPER(GREATER)
-"=="	OPER(EQUALS)
-"+="	OPER(ADD_COMP)
-"-="	OPER(SUB_COMP)
-"*="	OPER(MUL_COMP)
-"/="	OPER(DIV_COMP)
-"+"	OPER(ADD)
-"-"	OPER(SUB)
-"*"	OPER(MUL)
-"/"	OPER(DIV)
-"="	OPER(ASSIGNMENT)
-"!"	OPER(NOT)
  /* keywords */
-"static"	TOKEN(STATIC);
-"class"	TOKEN(CLASS);
-"if"	TOKEN(IF);
-"else"	TOKEN(ELSE);
+"class" return CLASS;
+"public" return PUBLIC;
+"static" return STATIC;
+"length" return LENGTH;
+"return" return RETURN;
+"if" return IF;
+"else" return ELSE;
+"while" return WHILE;
+"new" return NEW;
+"this" return THIS;
+"System.out.println" return SYSO;
  /* types */
-"void"	TOKEN(VOID);
-"int"	TOKEN(INT);
-"boolean"	TOKEN(BOOL);
-[a-zA-Z][_a-zA-Z0-9]*	ID(yytext)
-[0-9]+	NUM(yytext)
-.	printf("\n---(%s)---\n", yytext);
+"void" return VOID;
+"int" return INT;
+"boolean" return BOOL;
+"String" return STRING;
+
+ /* boolean values */
+"true" return TRUE;
+"false" return FALSE;
+
+ /* operators */
+"||" return DISJ;
+"&&" return CONJ;
+"==" return EQUAL;
+"!=" return NEQUAL;
+"<=" return LEQ;
+">=" return GEQ;
+"<" return LESS;
+">" return GREATER;
+"+" return PLUS;
+"-" return MINUS;
+"*" return MULT;
+"!" return NOT;
+
+ /* symbols */
+"{" return LBLOCK;
+"}" return RBLOCK;
+"(" return LPAREN;
+")" return RPAREN;
+"[" return LBRACK;
+"]" return RBRACK;
+";" return SCOLON;
+"," return COMMA;
+"." return PERIOD;
+
+ /* identifier/numbers */
+[0-9]+ yylval.id = strdup(yytext); return int_lit;
+[a-zA-Z][_a-zA-Z0-9]* yylval.id = strdup(yytext); return id;
 
 %%
 
@@ -58,4 +64,5 @@ int yywrap() { return -1; }
 int main()
 {
 	while(yylex());
+	return 0;
 }

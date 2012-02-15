@@ -1,5 +1,5 @@
 all: minijava.y minijava.l
-	bison -d minijava.y
+	bison --report=all -d minijava.y
 	flex minijava.l
 	gcc -Wall -o miniduke lex.yy.c minijava.tab.c
 

@@ -1,11 +1,15 @@
 %{
 #include "minijava.tab.h"
 %}
-
+%option nodefault yylineno
 %%
 
+
  /* ignore whitespace */
-[ \t\n]+	;
+[ \t\n]+ ;
+ /* ignore comments*/
+"//".* ;
+ /* TODO ignore block comments */
  /* keywords */
 "class" return CLASS;
 "public" return PUBLIC;
@@ -49,6 +53,7 @@
 ")" return RPAREN;
 "[" return LBRACK;
 "]" return RBRACK;
+"=" return ASSIGN;
 ";" return SCOLON;
 "," return COMMA;
 "." return PERIOD;
@@ -59,10 +64,9 @@
 
 %%
 
-int yywrap() { return -1; }
+int yywrap() { return 1; }
 
 int main()
 {
-	while(yylex());
-	return 0;
+	return yyparse();
 }

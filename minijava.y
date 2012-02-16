@@ -1,8 +1,11 @@
 %{
 	#include <stdio.h>
 	extern int yylex();
-	void yyerror(const char *s) { printf("ERROR: %s\n", s); }
+
+	extern int yylineno;
+	void yyerror(const char *s) { printf("%02d: %s\n", yylineno, s); }
 %}
+
 %union{
 	char *id;
 }
@@ -47,6 +50,7 @@
 %token RPAREN /* ) */
 %token LBRACK /* [ */
 %token RBRACK /* ] */
+%token ASSIGN /* = */
 %token SCOLON /* ; */
 %token COMMA /* , */
 %token PERIOD /* . */
@@ -57,26 +61,28 @@
 
 %start Program
 
+%error-verbose
+
 %%
 
 Program: MainClass ClassList {puts("Program");}
 
-MainClass: CLASS id LBLOCK PUBLIC STATIC VOID id LPAREN STRING LBRACK RBRACK id LBLOCK VarList StmtList {puts("MainClass");}
+MainClass: CLASS id LBLOCK PUBLIC STATIC VOID id LPAREN STRING LBRACK RBRACK id RPAREN LBLOCK VarList StmtList RBLOCK RBLOCK {printf("MainClass(%s)\n", $2);}
 
 ClassList: ClassList ClassDecl
 	| /* empty */
 
-ClassDecl: CLASS id LBLOCK VarList MethodList RBLOCK {puts("ClassDecl");}
+ClassDecl: CLASS id LBLOCK VarList MethodList RBLOCK {printf("ClassDecl(%s)\n", $2);}
 
 VarList: VarList VarDecl
 	| /* empty */
 
-VarDecl: Type id SCOLON {puts("VarDecl");}
+VarDecl: Type id SCOLON {printf("VarDecl(%s)\n", $2);}
 
 MethodList: MethodList MethodDecl
 	| /* empty */
 
-MethodDecl: PUBLIC Type id LPAREN FormalList RPAREN LBLOCK VarList StmtList RETURN Exp SCOLON RBLOCK {puts("VarDecl");}
+MethodDecl: PUBLIC Type id LPAREN FormalList RPAREN LBLOCK VarList StmtList RETURN Exp SCOLON RBLOCK {printf("MethodDecl(%s)\n", $3);}
 
 FormalList: Type id FormalRest {puts("FormalList");}
 	| /* empty */
@@ -96,6 +102,8 @@ Stmt: LBLOCK StmtList RBLOCK {puts("Stmt:{Stmt*}");}
 	| IF LPAREN Exp RPAREN Stmt ELSE Stmt {puts("Stmt:if-else");}
 	| WHILE LPAREN Exp RPAREN Stmt {puts("Stmt:while");}
 	| SYSO LPAREN Exp RPAREN SCOLON {puts("Stmt:SYSO");}
+	| id ASSIGN Exp SCOLON {printf("Stmt:Assign(%s)\n", $1);}
+	| id LBRACK Exp RBRACK ASSIGN Exp SCOLON {printf("Stmt:ArrayAssign(%s)\n", $1);}
 
 Exp: Exp Op Exp {puts("Exp:ExpOpExp");}
 	| Exp LBRACK Exp RBRACK {puts("Exp:Exp[Exp]");} // What should this do?
@@ -104,18 +112,18 @@ Exp: Exp Op Exp {puts("Exp:ExpOpExp");}
 	| int_lit {puts("Exp:int_lit");}
 	| TRUE {puts("Exp:true");}
 	| FALSE {puts("Exp:false");}
-	| id {puts("Exp:id");}
+	| id {printf("Exp:id(%s)\n", $1);}
 	| THIS {puts("Exp:this");}
 	| NEW INT LBRACK Exp RBRACK {puts("Exp:newint[]");}
 	| NEW id LPAREN RPAREN {puts("Exp:newid()");}
 	| NOT Exp {puts("Exp:!Exp");}
 	| LPAREN Exp RPAREN {puts("Exp:(Exp)");}
 
-Op: CONJ {puts("Exp:&&");}
-	| LESS {puts("Exp:<");}
-	| PLUS {puts("Exp:+");}
-	| MINUS {puts("Exp:-");}
-	| MULT {puts("Exp:*");}
+Op: CONJ {puts("Op:&&");}
+	| LESS {puts("Op:<");}
+	| PLUS {puts("Op:+");}
+	| MINUS {puts("Op:-");}
+	| MULT {puts("Op:*");}
 
 ExpList: Exp ExpRestList {puts("ExpList");}
 	| /* empty */

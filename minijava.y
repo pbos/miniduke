@@ -77,7 +77,7 @@ ClassDecl: CLASS id LBLOCK VarList MethodList RBLOCK {printf("ClassDecl(%s)\n", 
 VarList: VarList VarDecl
 	| /* empty */
 
-VarDecl: Type id SCOLON {printf("VarDecl(%s)\n", $2);}
+VarDecl: Type id SCOLON { printf("VarDecl(%s)\n", $2); }
 
 MethodList: MethodList MethodDecl
 	| /* empty */
@@ -93,9 +93,9 @@ FormalRest: FormalRest COMMA Type id {puts("FormalRest");}
 Type: INT LBRACK RBRACK {puts("Type:INT[]");}
 	| BOOL {puts("Type:BOOL");}
 	| INT {puts("Type:INT");}
-	| id {puts("Type:id");}
+	| id { printf("Type(%s)\n",$1); }
 
-StmtList: StmtList Stmt
+StmtList: Stmt StmtList
 	| /* empty */
 
 Stmt: LBLOCK StmtList RBLOCK {puts("Stmt:{Stmt*}");}

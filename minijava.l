@@ -1,7 +1,7 @@
 %{
 #include "minijava.tab.h"
 %}
-%option nodefault yylineno
+%option nodefault yylineno noyywrap
 %%
 
 
@@ -64,9 +64,3 @@
 
 %%
 
-int yywrap() { return 1; }
-
-int main()
-{
-	return yyparse();
-}

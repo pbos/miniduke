@@ -1,13 +1,23 @@
 %{
 	#include <stdio.h>
-	extern int yylex();
+	#include <stdint.h>
+	#include <string.h>
+	#include <stdlib.h>
+	#include "miniduke.h"
 
+	extern int yylex();
 	extern int yylineno;
 	void yyerror(const char *s) { printf("%02d: %s\n", yylineno, s); }
 %}
 
+%code requires{
+	#include "ast.h"
+}
+
 %union{
 	char *id;
+	int token;
+	ast_expr expr;
 }
 
 /* keywords */
@@ -59,6 +69,9 @@
 %token <id> id
 %token <id> int_lit
 
+%type <token> Op
+%type <expr> Exp
+
 %start Program
 
 %error-verbose
@@ -79,7 +92,7 @@ VarList: VarList VarDecl
 
 VarDecl: Type id SCOLON { printf("VarDecl(%s)\n", $2); }
 
-MethodList: MethodList MethodDecl
+MethodList: MethodDecl MethodList 
 	| /* empty */
 
 MethodDecl: PUBLIC Type id LPAREN FormalList RPAREN LBLOCK VarList StmtList RETURN Exp SCOLON RBLOCK {printf("MethodDecl(%s)\n", $3);}
@@ -90,7 +103,7 @@ FormalList: Type id FormalRest {puts("FormalList");}
 FormalRest: FormalRest COMMA Type id {puts("FormalRest");}
 	| /* empty */
 
-Type: INT LBRACK RBRACK {puts("Type:INT[]");}
+Type: INT LBRACK RBRACK {puts("Type:INT[]");} // What should this do (multidim arrays)?
 	| BOOL {puts("Type:BOOL");}
 	| INT {puts("Type:INT");}
 	| id { printf("Type(%s)\n",$1); }
@@ -105,13 +118,23 @@ Stmt: LBLOCK StmtList RBLOCK {puts("Stmt:{Stmt*}");}
 	| id ASSIGN Exp SCOLON {printf("Stmt:Assign(%s)\n", $1);}
 	| id LBRACK Exp RBRACK ASSIGN Exp SCOLON {printf("Stmt:ArrayAssign(%s)\n", $1);}
 
-Exp: Exp Op Exp {puts("Exp:ExpOpExp");}
+Exp: Exp Op Exp {printf("Exp:Exp-%d-Exp\n", @2.first_line);}
 	| Exp LBRACK Exp RBRACK {puts("Exp:Exp[Exp]");} // What should this do?
 	| Exp PERIOD LENGTH {puts("Exp:Exp.length");}
 	| Exp PERIOD id LPAREN ExpList RPAREN {puts("Exp:Exp.id(..)");}
-	| int_lit {puts("Exp:int_lit");}
-	| TRUE {puts("Exp:true");}
-	| FALSE {puts("Exp:false");}
+	| int_lit {
+		$$.type = INT_CONST;
+		$$.int_const = atoi($1);
+		char buffer[16];
+		sprintf(buffer, "%d", $$.int_const);
+		if(strcmp($1, buffer))
+		{
+			md_error(yylineno, "integer number too large: %s", $1);
+		}
+	}
+
+	| TRUE {$$.type = BOOL_CONST; $$.bool_const = true; }
+	| FALSE {$$.type = BOOL_CONST; $$.bool_const = false; }
 	| id {printf("Exp:id(%s)\n", $1);}
 	| THIS {puts("Exp:this");}
 	| NEW INT LBRACK Exp RBRACK {puts("Exp:newint[]");}
@@ -119,7 +142,7 @@ Exp: Exp Op Exp {puts("Exp:ExpOpExp");}
 	| NOT Exp {puts("Exp:!Exp");}
 	| LPAREN Exp RPAREN {puts("Exp:(Exp)");}
 
-Op: CONJ {puts("Op:&&");}
+Op: CONJ {$$=CONJ; puts("Op:&&");}
 	| LESS {puts("Op:<");}
 	| PLUS {puts("Op:+");}
 	| MINUS {puts("Op:-");}

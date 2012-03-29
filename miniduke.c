@@ -17,7 +17,21 @@ void md_error(int lineno, const char *error, ...)
 	exit(-1);
 }
 
-int main()
+extern FILE *yyin;
+
+int main(int argc, char *argv[])
 {
+	if(argc != 2)
+	{
+		fputs("usage: miniduke [file.java]\n", stderr);
+		return -1;
+	}
+	yyin = fopen(argv[1], "r");
+	if(yyin == NULL)
+	{
+		fprintf(stderr, "%s: ", argv[1]);
+		perror("");
+		return -1;
+	}
 	return yyparse();
 }

@@ -17,7 +17,8 @@
 %union{
 	char *id;
 	int token;
-	ast_expr expr;
+	ast_expr *expr;
+	ast_stmt *stmt;
 }
 
 /* keywords */
@@ -70,7 +71,8 @@
 %token <id> int_lit
 
 %type <token> Op
-%type <expr> Exp
+%type <expr> Exp ExpList ExpRest ExpRestList
+%type <stmt> Stmt StmtList
 
 %start Program
 
@@ -103,56 +105,99 @@ FormalList: Type id FormalRest {puts("FormalList");}
 FormalRest: FormalRest COMMA Type id {puts("FormalRest");}
 	| /* empty */
 
-Type: INT LBRACK RBRACK {puts("Type:INT[]");} // What should this do (multidim arrays)?
+Type: INT LBRACK RBRACK {puts("Type:INT[]");}
 	| BOOL {puts("Type:BOOL");}
 	| INT {puts("Type:INT");}
 	| id { printf("Type(%s)\n",$1); }
 
-StmtList: Stmt StmtList
-	| /* empty */
+StmtList: Stmt StmtList { $$ = $1; $$->next = $2; }
+	| /* empty */ { $$ = NULL; }
 
-Stmt: LBLOCK StmtList RBLOCK {puts("Stmt:{Stmt*}");}
-	| IF LPAREN Exp RPAREN Stmt ELSE Stmt {puts("Stmt:if-else");}
+Stmt: LBLOCK StmtList RBLOCK {
+		AST_STMT(stmt, BLOCK, stmt_list = $2)
+		$$ = stmt;
+	}
+	| IF LPAREN Exp RPAREN Stmt ELSE Stmt {
+		AST_STMT(stmt, IF_ELSE, if_cond = $3)
+		stmt->true_branch = $5;
+		stmt->false_branch = $7;
+		$$ = stmt;
+	}
 	| WHILE LPAREN Exp RPAREN Stmt {puts("Stmt:while");}
 	| SYSO LPAREN Exp RPAREN SCOLON {puts("Stmt:SYSO");}
 	| id ASSIGN Exp SCOLON {printf("Stmt:Assign(%s)\n", $1);}
 	| id LBRACK Exp RBRACK ASSIGN Exp SCOLON {printf("Stmt:ArrayAssign(%s)\n", $1);}
 
-Exp: Exp Op Exp {printf("Exp:Exp-%d-Exp\n", @2.first_line);}
+Exp: Exp Op Exp {
+		AST_EXPR_EMPTY(exp, EXP_OP_EXP);
+		exp->lhs = $1;
+		exp->oper = $2;
+		exp->rhs = $3;
+		$$ = exp;
+	}
 	| Exp LBRACK Exp RBRACK {puts("Exp:Exp[Exp]");} // What should this do?
 	| Exp PERIOD LENGTH {puts("Exp:Exp.length");}
-	| Exp PERIOD id LPAREN ExpList RPAREN {puts("Exp:Exp.id(..)");}
+	| Exp PERIOD id LPAREN ExpList RPAREN {
+		AST_EXPR_EMPTY(exp, METHOD_CALL)
+		exp->object = $1;
+		exp->method = $3;
+		exp->exp_list = $5;
+		$$ = exp;
+	}
 	| int_lit {
-		$$.type = INT_CONST;
-		$$.int_const = atoi($1);
+		AST_EXPR(exp, INT_CONST, int_const = atoi($1))
 		char buffer[16];
-		sprintf(buffer, "%d", $$.int_const);
+		sprintf(buffer, "%d", exp->int_const);
 		if(strcmp($1, buffer))
 		{
 			md_error(yylineno, "integer number too large: %s", $1);
 		}
+		free($1);
+		$$=exp;
 	}
+	| TRUE {
+		AST_EXPR(exp, BOOL_CONST, bool_const = true)
+		$$ = exp;
+	}
+	| FALSE {
+		AST_EXPR(exp, BOOL_CONST, bool_const = false)
+		$$ = exp;
+	}
+	| id {
+		AST_EXPR(exp, VARNAME, id = $1);
+		$$ = exp;
+	}
+	| THIS {
+		AST_EXPR_EMPTY(exp, THIS_PTR)
+		$$ = exp;
+	}
+	| NEW INT LBRACK Exp RBRACK {puts("Exp:newint[]");} // Disallow multidim arrays.
+	| NEW id LPAREN RPAREN {
+		AST_EXPR(exp, NEW_CLASS, id=$2)
+		$$ = exp;
+	}
+	| NOT Exp {
+		AST_EXPR(exp, NOT_EXPR, expr=$2)
+		$$ = exp;
+	}
+	| LPAREN Exp RPAREN { $$ = $2; }
 
-	| TRUE {$$.type = BOOL_CONST; $$.bool_const = true; }
-	| FALSE {$$.type = BOOL_CONST; $$.bool_const = false; }
-	| id {printf("Exp:id(%s)\n", $1);}
-	| THIS {puts("Exp:this");}
-	| NEW INT LBRACK Exp RBRACK {puts("Exp:newint[]");}
-	| NEW id LPAREN RPAREN {puts("Exp:newid()");}
-	| NOT Exp {puts("Exp:!Exp");}
-	| LPAREN Exp RPAREN {puts("Exp:(Exp)");}
+Op: CONJ { $$=CONJ; }
+	| LESS { $$ = LESS; }
+	| PLUS { $$ = PLUS;}
+	| MINUS { $$ = MINUS; }
+	| MULT { $$ = MULT; }
 
-Op: CONJ {$$=CONJ; puts("Op:&&");}
-	| LESS {puts("Op:<");}
-	| PLUS {puts("Op:+");}
-	| MINUS {puts("Op:-");}
-	| MULT {puts("Op:*");}
+ExpList: Exp ExpRestList {
+		$$ = $1;
+		$$->next = $2;
+	}
+	| /* empty */ { $$ = NULL; }
 
-ExpList: Exp ExpRestList {puts("ExpList");}
-	| /* empty */
+ExpRestList: ExpRest ExpRestList {
+		$$ = $1;
+		$$->next = $2;
+	}
+	| /* empty */ { $$ = NULL; }
 
-ExpRestList: ExpRestList ExpRest
-	| /* empty */
-
-ExpRest: COMMA Exp {puts("ExpRest");}
-
+ExpRest: COMMA Exp { $$ = $2; }

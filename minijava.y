@@ -1,6 +1,7 @@
 %{
 	#include <stdio.h>
 	#include <stdint.h>
+	#include <inttypes.h>
 	#include <string.h>
 	#include <stdlib.h>
 	#include "miniduke.h"
@@ -172,7 +173,7 @@ Exp: Exp Op Exp {
 	| int_lit {
 		AST_EXPR(exp, INT_CONST, int_const = atoi($1))
 		char buffer[16];
-		sprintf(buffer, "%d", exp->int_const);
+		sprintf(buffer, "%" PRId32, exp->int_const);
 		if(strcmp($1, buffer))
 		{
 			md_error(yylineno, "integer number too large: %s", $1);

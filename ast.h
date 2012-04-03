@@ -58,7 +58,7 @@ typedef struct ast_stmt {
 				};
 			};
 		};
-		struct ast_stmt *expr; // SYSO
+		struct ast_expr *expr; // SYSO
 	};
 	struct ast_stmt *next; // Non-NULL => StmtList
 } ast_stmt;

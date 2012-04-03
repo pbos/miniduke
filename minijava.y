@@ -116,6 +116,7 @@ StmtList: Stmt StmtList { $$ = $1; $$->next = $2; }
 Stmt: LBLOCK StmtList RBLOCK {
 		AST_STMT(stmt, BLOCK, stmt_list = $2)
 		$$ = stmt;
+		ast_stmt_print(stderr, 2, stmt);
 	}
 	| IF LPAREN Exp RPAREN Stmt ELSE Stmt {
 		AST_STMT(stmt, IF_ELSE, if_cond = $3)
@@ -125,11 +126,14 @@ Stmt: LBLOCK StmtList RBLOCK {
 	}
 	| WHILE LPAREN Exp RPAREN Stmt {puts("Stmt:while");}
 	| SYSO LPAREN Exp RPAREN SCOLON {puts("Stmt:SYSO");}
-	| id ASSIGN Exp SCOLON {printf("Stmt:Assign(%s)\n", $1);}
+	| id ASSIGN Exp SCOLON {
+		printf("Stmt:Assign(%s)\n", $1);
+		ast_expr_print(stderr, 1, $3);
+	}
 	| id LBRACK Exp RBRACK ASSIGN Exp SCOLON {printf("Stmt:ArrayAssign(%s)\n", $1);}
 
 Exp: Exp Op Exp {
-		AST_EXPR_EMPTY(exp, EXP_OP_EXP);
+		AST_EXPR_EMPTY(exp, BINOP);
 		exp->lhs = $1;
 		exp->oper = $2;
 		exp->rhs = $3;

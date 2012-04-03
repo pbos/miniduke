@@ -116,7 +116,7 @@ MethodDecl: PUBLIC Type id LPAREN FormalList RPAREN LBLOCK VarList StmtList RETU
 FormalList: Type id FormalRest {puts("FormalList");}
 	| /* empty */
 
-FormalRest: FormalRest COMMA Type id {puts("FormalRest");}
+FormalRest: COMMA Type id FormalRest{puts("FormalRest");}
 	| /* empty */
 
 Type: INT LBRACK RBRACK { AST_TYPE(type, VAR_INT_VECTOR); $$ = type; }
@@ -133,13 +133,20 @@ Stmt: LBLOCK StmtList RBLOCK {
 		ast_stmt_print(stderr, 2, stmt);
 	}
 	| IF LPAREN Exp RPAREN Stmt ELSE Stmt {
-		AST_STMT(stmt, IF_ELSE, if_cond = $3)
+		AST_STMT(stmt, IF_ELSE, cond = $3)
 		stmt->true_branch = $5;
 		stmt->false_branch = $7;
 		$$ = stmt;
 	}
-	| WHILE LPAREN Exp RPAREN Stmt {puts("Stmt:while");}
-	| SYSO LPAREN Exp RPAREN SCOLON {puts("Stmt:SYSO");}
+	| WHILE LPAREN Exp RPAREN Stmt {
+		AST_STMT(stmt, WHILE_STMT, cond = $3)
+		stmt->while_branch = $5;
+		$$ = stmt;
+	}
+	| SYSO LPAREN Exp RPAREN SCOLON {
+		AST_STMT(stmt, SYS_OUT, expr = $3)
+		$$ = stmt;
+	}
 	| id ASSIGN Exp SCOLON {
 		printf("Stmt:Assign(%s)\n", $1);
 		ast_expr_print(stderr, 1, $3);

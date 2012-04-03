@@ -40,6 +40,8 @@ typedef struct ast_expr {
 typedef enum {
 	BLOCK,
 	IF_ELSE,
+	WHILE_STMT,
+	SYS_OUT
 } ast_stmt_type;
 
 typedef struct ast_stmt {
@@ -47,10 +49,16 @@ typedef struct ast_stmt {
 	ast_stmt_type type;
 	union {
 		struct ast_stmt *stmt_list; // BLOCK
-		struct { // IF_ELSE
-			ast_expr *if_cond; 
-			struct ast_stmt *true_branch, *false_branch;
+		struct { // IF_ELSE / WHILE
+			ast_expr *cond; 
+			union {
+				struct ast_stmt *while_branch; // WHILE
+				struct { // IF_ELSE
+					struct ast_stmt *true_branch, *false_branch;
+				};
+			};
 		};
+		struct ast_stmt *expr; // SYSO
 	};
 	struct ast_stmt *next; // Non-NULL => StmtList
 } ast_stmt;

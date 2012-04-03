@@ -19,6 +19,8 @@
 	int token;
 	ast_expr *expr;
 	ast_stmt *stmt;
+	ast_vardecl *decl;
+	ast_type type;
 }
 
 /* keywords */
@@ -73,6 +75,8 @@
 %type <token> Op
 %type <expr> Exp ExpList ExpRest ExpRestList
 %type <stmt> Stmt StmtList
+%type <decl> VarDecl VarList
+%type <type> Type
 
 %start Program
 
@@ -89,10 +93,20 @@ ClassList: ClassList ClassDecl
 
 ClassDecl: CLASS id LBLOCK VarList MethodList RBLOCK {printf("ClassDecl(%s)\n", $2);}
 
-VarList: VarList VarDecl
-	| /* empty */
+VarList: VarList VarDecl {
+		$$ = $2;
+		$2->next = $1;
+		while($2->next != NULL)
+		{
+			$2->next = $2->next->next;
+		}
+	}
+	| /* empty */ { $$ = NULL; }
 
-VarDecl: Type id SCOLON { printf("VarDecl(%s)\n", $2); }
+VarDecl: Type id SCOLON {
+		AST_VARDECL(decl, $1, $2)
+		$$ = decl;
+	}
 
 MethodList: MethodDecl MethodList 
 	| /* empty */
@@ -105,10 +119,10 @@ FormalList: Type id FormalRest {puts("FormalList");}
 FormalRest: FormalRest COMMA Type id {puts("FormalRest");}
 	| /* empty */
 
-Type: INT LBRACK RBRACK {puts("Type:INT[]");}
-	| BOOL {puts("Type:BOOL");}
-	| INT {puts("Type:INT");}
-	| id { printf("Type(%s)\n",$1); }
+Type: INT LBRACK RBRACK { AST_TYPE(type, VAR_INT_VECTOR); $$ = type; }
+	| BOOL { AST_TYPE(type, VAR_BOOL); $$ = type; }
+	| INT { AST_TYPE(type, VAR_INT); $$ = type; }
+	| id { AST_CLASS(type, $1); $$ = type; }
 
 StmtList: Stmt StmtList { $$ = $1; $$->next = $2; }
 	| /* empty */ { $$ = NULL; }
@@ -133,7 +147,7 @@ Stmt: LBLOCK StmtList RBLOCK {
 	| id LBRACK Exp RBRACK ASSIGN Exp SCOLON {printf("Stmt:ArrayAssign(%s)\n", $1);}
 
 Exp: Exp Op Exp {
-		AST_EXPR_EMPTY(exp, BINOP);
+		AST_EXPR_EMPTY(exp, BINOP)
 		exp->lhs = $1;
 		exp->oper = $2;
 		exp->rhs = $3;

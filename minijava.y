@@ -8,7 +8,7 @@
 
 	extern int yylex();
 	extern int yylineno;
-	void yyerror(const char *s) { printf("%02d: %s\n", yylineno, s); }
+	void yyerror(const char *s) { md_error(yylineno, "%s", s); }
 %}
 
 %code requires{

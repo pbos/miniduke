@@ -5,9 +5,11 @@
 
 extern int yyparse();
 
+const char *filename;
+
 void md_error(int lineno, const char *error, ...)
 {
-	fprintf(stderr, "file:%d: ", lineno);
+	fprintf(stderr, "%s:%d: ", filename, lineno);
 	va_list args;
 	va_start (args, error);
 	vfprintf (stderr, error, args);
@@ -26,7 +28,8 @@ int main(int argc, char *argv[])
 		fputs("usage: miniduke [file.java]\n", stderr);
 		return -1;
 	}
-	yyin = fopen(argv[1], "r");
+	filename = argv[1];
+	yyin = fopen(filename, "r");
 	if(yyin == NULL)
 	{
 		fprintf(stderr, "%s: ", argv[1]);

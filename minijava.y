@@ -74,7 +74,7 @@
 %token <id> int_lit
 
 %type <token> Op
-%type <expr> Exp ExpList ExpRest ExpRestList
+%type <expr> Exp ExpList ExpRest ExpRestList NewIntArray Multidim
 %type <stmt> Stmt StmtList
 %type <decl> VarDecl VarList
 %type <type> Type
@@ -120,7 +120,7 @@ FormalList: Type id FormalRest {puts("FormalList");}
 FormalRest: COMMA Type id FormalRest{puts("FormalRest");}
 	| /* empty */
 
-Type: INT LBRACK RBRACK { AST_TYPE(type, VAR_INT_VECTOR); $$ = type; }
+Type: INT LBRACK RBRACK { AST_TYPE(type, VAR_INT_ARRAY); $$ = type; }
 	| BOOL { AST_TYPE(type, VAR_BOOL); $$ = type; }
 	| INT { AST_TYPE(type, VAR_INT); $$ = type; }
 	| id { AST_CLASS(type, $1); $$ = type; }
@@ -162,7 +162,10 @@ Exp: Exp Op Exp {
 		$$ = exp;
 	}
 	| Exp LBRACK Exp RBRACK {puts("Exp:Exp[Exp]");} // What should this do?
-	| Exp PERIOD LENGTH {puts("Exp:Exp.length");}
+	| Exp PERIOD LENGTH {
+		AST_EXPR(exp, ARRAY_LENGTH, expr = $1)
+		$$ = $1;
+	}
 	| Exp PERIOD id LPAREN ExpList RPAREN {
 		AST_EXPR_EMPTY(exp, METHOD_CALL)
 		exp->object = $1;
@@ -197,7 +200,7 @@ Exp: Exp Op Exp {
 		AST_EXPR_EMPTY(exp, THIS_PTR)
 		$$ = exp;
 	}
-	| NEW INT LBRACK Exp RBRACK {puts("Exp:newint[]");} // Disallow multidim arrays.
+	| NewIntArray { $$ = $1; } // Non-terminal to disallow multidim arrays
 	| NEW id LPAREN RPAREN {
 		AST_EXPR(exp, NEW_CLASS, id=$2)
 		$$ = exp;
@@ -207,6 +210,16 @@ Exp: Exp Op Exp {
 		$$ = exp;
 	}
 	| LPAREN Exp RPAREN { $$ = $2; }
+
+NewIntArray: NEW INT LBRACK Exp RBRACK Multidim {
+		if($6 != NULL)
+			md_error(yylineno, "MiniJava doesn't support multidimensional arrays.");
+		AST_EXPR(exp, NEW_INT_ARRAY, expr = $4)
+		$$ = exp;
+	}
+
+Multidim: LBRACK Exp RBRACK Multidim { $$ = (ast_expr *) 1; } // Non-NULL => error
+	| /* empty */ { $$ = NULL; }
 
 Op: CONJ { $$=CONJ; }
 	| LESS { $$ = LESS; }

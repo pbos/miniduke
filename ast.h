@@ -12,6 +12,8 @@ typedef enum {
 	THIS_PTR,
 	NOT_EXPR,
 	NEW_CLASS,
+	NEW_INT_ARRAY,
+	ARRAY_LENGTH,
 	METHOD_CALL,
 	BINOP,
 } ast_expr_type;
@@ -23,7 +25,7 @@ typedef struct ast_expr {
 		int32_t int_const; // INT_CONST
 		bool bool_const; // BOOL_CONST
 		const char *id; // VARNAME, NEW_CLASS
-		struct ast_expr *expr; // NOT_EXPR
+		struct ast_expr *expr; // NOT_EXPR / NEW_INT_ARRAY / ARRAY_LENGTH
 		struct { // METHOD_CALL
 			struct ast_expr *object;
 			char *method;
@@ -66,7 +68,7 @@ typedef struct ast_stmt {
 typedef enum {
 	VAR_BOOL,
 	VAR_INT,
-	VAR_INT_VECTOR,
+	VAR_INT_ARRAY,
 	VAR_CLASS
 } ast_var_type;
 

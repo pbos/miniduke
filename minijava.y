@@ -161,7 +161,11 @@ Exp: Exp Op Exp {
 		exp->rhs = $3;
 		$$ = exp;
 	}
-	| Exp LBRACK Exp RBRACK {puts("Exp:Exp[Exp]");} // What should this do?
+	| Exp LBRACK Exp RBRACK {
+		AST_EXPR(exp, ARRAY_INDEX, array = $1)
+		exp->array_index = $3;
+		$$ = $1;
+	}
 	| Exp PERIOD LENGTH {
 		AST_EXPR(exp, ARRAY_LENGTH, expr = $1)
 		$$ = $1;

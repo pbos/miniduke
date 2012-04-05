@@ -14,6 +14,7 @@ typedef enum {
 	NEW_CLASS,
 	NEW_INT_ARRAY,
 	ARRAY_LENGTH,
+	ARRAY_INDEX,
 	METHOD_CALL,
 	BINOP,
 } ast_expr_type;
@@ -34,6 +35,9 @@ typedef struct ast_expr {
 		struct { // BINOP
 			struct ast_expr *lhs, *rhs;
 			int oper;
+		};
+		struct { // ARRAY_INDEX
+			struct ast_expr *array, *array_index;
 		};
 	};
 	struct ast_expr *next; // Non-NULL => ExpList

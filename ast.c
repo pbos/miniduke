@@ -10,6 +10,8 @@ void print_indent(FILE *file, int indent_level)
 
 void ast_expr_print(FILE *file, int indent_level, ast_expr *expr)
 {
+	if(expr == NULL)
+		return; // If ExpList is empty, print nothing
 	print_indent(file, indent_level);
 
 	char *op_str;
@@ -33,7 +35,7 @@ void ast_expr_print(FILE *file, int indent_level, ast_expr *expr)
 				ast_expr_print(file, indent_level + 1, expr->expr);
 			break;
 		case NEW_CLASS:
-			fprintf(file, "NEW_CLASS(%s)", expr->id);
+			fprintf(file, "NEW_CLASS(%s)\n", expr->id);
 			break;
 		case NEW_INT_ARRAY:
 			fprintf(file, "NEW_INT_ARRAY[\n");
@@ -48,19 +50,22 @@ void ast_expr_print(FILE *file, int indent_level, ast_expr *expr)
 		case ARRAY_INDEX:
 			fprintf(file, "ARRAY_INDEX:\n");
 				ast_expr_print(file, indent_level + 1, expr->array);
-			print_indent(file, indent_level);
+			print_indent(file, indent_level+1);
 			fprintf(file, "[\n");
 				ast_expr_print(file, indent_level + 1, expr->array_index);
-			print_indent(file, indent_level);
+			print_indent(file, indent_level+1);
 			fprintf(file, "]\n");
 			break;
 		case METHOD_CALL:
-			fprintf(file, "METHOD CALL(%s)\n", expr->method);
+			fprintf(file, "METHOD_CALL(%s):\n", expr->method);
+			print_indent(file, indent_level + 1);
+			fprintf(file, "OBJECT:\n");
+				ast_expr_print(file, indent_level + 2, expr->object);
+			print_indent(file, indent_level + 1);
+			fprintf(file, "EXP_LIST:\n");
+				ast_expr_print(file, indent_level + 2, expr->exp_list);
 			break;
 		case BINOP:
-			fprintf(file, "BINOP:\n");
-				ast_expr_print(file, indent_level + 1, expr->lhs);
-			print_indent(file, indent_level);
 			switch(expr->oper) {
 				case CONJ:
 					op_str = "CONJ";
@@ -81,41 +86,82 @@ void ast_expr_print(FILE *file, int indent_level, ast_expr *expr)
 					op_str = "--- UNKNOWN OPERAND ---";
 					break;
 			}
-			fprintf(file, "%s\n", op_str);
-				ast_expr_print(file, indent_level + 1, expr->rhs);
+			fprintf(file, "BINOP(%s):\n", op_str);
+			print_indent(file, indent_level + 1);
+			fprintf(file, "LHS:\n");
+				ast_expr_print(file, indent_level + 2, expr->lhs);
+			print_indent(file, indent_level + 1);
+			fprintf(file, "RHS:\n");
+				ast_expr_print(file, indent_level + 2, expr->rhs);
 			break;
 		default:
 			fprintf(file, "!!! UNKNOWN EXPR :(((( !!!\n");
 			break;
 	}
-	if(expr->next != NULL)
+	if(expr->next != NULL) // ExpList
 	{
-		print_indent(file, indent_level);
-		fputs(",\n", stderr);
 		ast_expr_print(file, indent_level, expr->next);
 	}
 }
 
 void ast_stmt_print(FILE *file, int indent_level, ast_stmt *stmt)
 {
+	if(stmt == NULL)
+		return; // If StmtList is empty, print nothing.
 	print_indent(file, indent_level);
 
 	switch(stmt->type)
 	{
 		case BLOCK:
-			fputs("{\n", file);
-			ast_stmt_print(file, indent_level+1, stmt->stmt_list);
-			print_indent(file, indent_level);
-			fputs("}\n", file);
+			fputs("BLOCK:\n", file);
+				ast_stmt_print(file, indent_level+1, stmt->stmt_list);
+			break;
+		case IF_ELSE:
+			fprintf(file, "IF_ELSE:\n");
+			print_indent(file, indent_level + 1);
+			fprintf(file, "COND:\n");
+				ast_expr_print(file, indent_level+2, stmt->cond);
+			print_indent(file, indent_level + 1);
+			fprintf(file, "TRUE:\n");
+				ast_stmt_print(file, indent_level+2, stmt->true_branch);
+			print_indent(file, indent_level + 1);
+			fprintf(file, "FALSE:\n");
+				ast_stmt_print(file, indent_level+2, stmt->false_branch);
+			break;
+		case WHILE_STMT:
+			fprintf(file, "WHILE_STMT:\n");
+			print_indent(file, indent_level + 1);
+			fprintf(file, "COND:\n");
+				ast_expr_print(file, indent_level+2, stmt->cond);
+			print_indent(file, indent_level + 1);
+			fprintf(file, "WHILE_TRUE:\n");
+				ast_stmt_print(file, indent_level+2, stmt->while_branch);
+			break;
+		case SYS_OUT:
+			fprintf(file, "SYS_OUT:\n");
+				ast_expr_print(file, indent_level + 1, stmt->expr);
+			break;
+		case VAR_ASSIGN:
+			fprintf(file, "VAR_ASSIGN(%s):\n", stmt->id);
+			print_indent(file, indent_level + 1);
+			fprintf(file, "EXPR:\n");
+				ast_expr_print(file, indent_level + 2, stmt->assign_expr);
+			break;
+		case ARRAY_ASSIGN:
+			fprintf(file, "ARRAY_ASSIGN(%s):\n", stmt->id);
+			print_indent(file, indent_level + 1);
+			fprintf(file, "INDEX:\n");
+				ast_expr_print(file, indent_level + 2, stmt->array_index);
+			print_indent(file, indent_level + 1);
+			fprintf(file, "EXPR:\n");
+				ast_expr_print(file, indent_level + 2, stmt->assign_expr);
 			break;
 		default:
 			fprintf(file, "--- UNKNOWN STMT :(((( ---\n");
 			break;
 	}
-	if(stmt->next != NULL)
+	if(stmt->next != NULL) // StmtList
 	{
-		print_indent(file, indent_level);
-		fputs(",\n", stderr);
 		ast_stmt_print(file, indent_level, stmt->next);
 	}
 }

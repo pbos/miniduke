@@ -1,11 +1,15 @@
-#include "minijava.tab.h"
+#include "miniduke.h"
+
 #include <stdio.h>
 #include <stdarg.h>
 #include <stdlib.h>
+#include <string.h>
 
 extern int yyparse();
 
 const char *filename;
+
+ast_program md_ast;
 
 void md_error(int lineno, const char *error, ...)
 {
@@ -36,5 +40,19 @@ int main(int argc, char *argv[])
 		perror("");
 		return -1;
 	}
-	return yyparse();
+	if(yyparse())
+		return -1;
+
+	char ast_filename[strlen(md_ast.main_class.id) + strlen(".syntax") + 1];
+	sprintf(ast_filename, "%s.syntax", md_ast.main_class.id);
+
+	FILE *ast_file = fopen(ast_filename, "w");
+	if(ast_file)
+	{
+		ast_program_print(ast_file, 0, &md_ast);
+	}
+	else
+		fprintf(stderr, "warning: couldn't open AST file '%s' for writing.\n", ast_filename);
+
+	return 0;
 }

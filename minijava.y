@@ -24,7 +24,6 @@
 	ast_methoddecl *method;
 	ast_classdecl *class;
 	ast_mainclass main;
-	ast_program program;
 	ast_type type;
 }
 
@@ -85,7 +84,6 @@
 %type <method> MethodDecl MethodList
 %type <class> ClassDecl ClassList
 %type <main> MainClass
-%type <program> Program
 
 %start Program
 
@@ -95,8 +93,7 @@
 
 Program: MainClass ClassList {
 		AST_PROGRAM(program, $1, $2)
-		$$ = program;
-		ast_program_print(stderr, 0, &program);
+		md_ast = program;
 	}
 
 MainClass: CLASS id LBLOCK PUBLIC STATIC VOID id LPAREN STRING LBRACK RBRACK id RPAREN LBLOCK VarList StmtList RBLOCK RBLOCK {

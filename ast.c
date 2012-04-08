@@ -99,9 +99,7 @@ void ast_expr_print(FILE *file, int indent_level, ast_expr *expr)
 			break;
 	}
 	if(expr->next != NULL) // ExpList
-	{
 		ast_expr_print(file, indent_level, expr->next);
-	}
 }
 
 void ast_stmt_print(FILE *file, int indent_level, ast_stmt *stmt)
@@ -161,7 +159,58 @@ void ast_stmt_print(FILE *file, int indent_level, ast_stmt *stmt)
 			break;
 	}
 	if(stmt->next != NULL) // StmtList
-	{
 		ast_stmt_print(file, indent_level, stmt->next);
+}
+
+const char *ast_type_str(ast_type type)
+{
+	switch (type.type)
+	{
+		case VAR_BOOL:
+			return "boolean";
+		case VAR_INT:
+			return "int";
+		case VAR_INT_ARRAY:
+			return "int[]";
+		case VAR_CLASS:
+			return type.classname;
+		default:
+			return "-- UNKNOWN TYPE --";
 	}
+}
+
+void ast_vardecl_print(FILE *file, int indent_level, ast_vardecl *decl)
+{
+	if(decl == NULL)
+		return; // If VarList is empty, print nothing.
+
+	print_indent(file, indent_level);
+	fprintf(file, "VARDECL(%s : %s)\n", decl->id, ast_type_str(decl->type));
+
+	if(decl->next != NULL)
+		ast_vardecl_print(file, indent_level, decl->next);
+}
+
+void ast_method_print(FILE *file, int indent_level, ast_methoddecl *method)
+{
+	if(method == NULL)
+		return; // If MethodList is empty, print nothing.
+
+	print_indent(file, indent_level);
+	fprintf(file, "METHOD_DECL(%s : %s):\n", method->id, ast_type_str(method->type));
+	print_indent(file, indent_level + 1);
+	fprintf(file, "PARAMETERS:\n");
+		ast_vardecl_print(file, indent_level + 2, method->params);
+	print_indent(file, indent_level + 1);
+	fprintf(file, "VAR_DECL:\n");
+		ast_vardecl_print(file, indent_level + 2, method->var_decl);
+	print_indent(file, indent_level + 1);
+	fprintf(file, "BODY:\n");
+		ast_stmt_print(file, indent_level + 2, method->body);
+	print_indent(file, indent_level + 1);
+	fprintf(file, "RETURN:\n");
+		ast_expr_print(file, indent_level + 2, method->return_expr);
+
+	if(method->next != NULL) // StmtList
+		ast_method_print(file, indent_level, method->next);
 }

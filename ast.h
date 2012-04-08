@@ -91,10 +91,20 @@ typedef struct {
 typedef struct ast_vardecl {
 	ast_type type;
 
-	char *id;
+	const char *id;
 
 	struct ast_vardecl *next; // Non-NULL => VarList
 } ast_vardecl;
+
+typedef struct ast_methoddecl {
+	ast_type type;
+	const char *id;
+	ast_vardecl *params;
+	ast_vardecl *var_decl;
+	ast_stmt *body;
+	ast_expr *return_expr;
+	struct ast_methoddecl *next; // MethodList
+} ast_methoddecl;
 
 #define AST_EXPR_EMPTY(name, expr_type) ast_expr *name = malloc(sizeof(ast_expr)); name->type = expr_type; name->next = NULL;
 #define AST_EXPR(name, type, assign) AST_EXPR_EMPTY(name, type) name->assign;
@@ -107,9 +117,15 @@ typedef struct ast_vardecl {
 #define AST_TYPE(name, var_type) ast_type name; name.type = var_type;
 #define AST_CLASS(name, class_id) AST_TYPE(name, VAR_CLASS); name.classname = class_id;
 
+#define AST_METHODDECL(name, method_type, method_id, method_params, method_vars, method_body, method_return) \
+	ast_methoddecl *name = malloc(sizeof(ast_methoddecl)); name->next = NULL; name->type = method_type; \
+	name->id = method_id; name->params = method_params; name->var_decl = method_vars; \
+	name->body = method_body; name->return_expr = method_return;
+
 void ast_expr_print(FILE *file, int indent_level, ast_expr *expr);
 void ast_stmt_print(FILE *file, int indent_level, ast_stmt *stmt);
 void ast_vardecl_print(FILE *file, int indent_level, ast_vardecl *decl);
+void ast_method_print(FILE *file, int indent_level, ast_methoddecl *method);
 
 // TODO: void ast_type_print(FILE *file, int indent_level, ast_type *type);
 

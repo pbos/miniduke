@@ -21,6 +21,7 @@
 	ast_expr *expr;
 	ast_stmt *stmt;
 	ast_vardecl *decl;
+	ast_methoddecl *method;
 	ast_type type;
 }
 
@@ -76,8 +77,9 @@
 %type <token> Op
 %type <expr> Exp ExpList ExpRest ExpRestList NewIntArray Multidim
 %type <stmt> Stmt StmtList
-%type <decl> VarDecl VarList
+%type <decl> VarDecl VarList FormalList FormalRest
 %type <type> Type
+%type <method> MethodDecl MethodList
 
 %start Program
 
@@ -98,11 +100,15 @@ ClassList: ClassList ClassDecl
 ClassDecl: CLASS id LBLOCK VarList MethodList RBLOCK {printf("ClassDecl(%s)\n", $2);}
 
 VarList: VarList VarDecl {
-		$$ = $2;
-		$2->next = $1;
-		while($2->next != NULL)
+		if($1 == NULL)
+			$$ = $2;
+		else
 		{
-			$2->next = $2->next->next;
+			ast_vardecl *decl = $1;
+			while(decl->next != NULL)
+				decl = decl->next;
+			decl->next = $2;
+			$$ = $1;
 		}
 	}
 	| /* empty */ { $$ = NULL; }
@@ -112,19 +118,28 @@ VarDecl: Type id SCOLON {
 		$$ = decl;
 	}
 
-MethodList: MethodDecl MethodList 
-	| /* empty */
+MethodList: MethodDecl MethodList { $1->next = $2; $$ = $1; }
+	| /* empty */ { $$ = NULL; }
 
 MethodDecl: PUBLIC Type id LPAREN FormalList RPAREN LBLOCK VarList StmtList RETURN Exp SCOLON RBLOCK {
-	printf("MethodDecl(%s)\n", $3);
-	ast_stmt_print(stderr, 1, $9);
+	AST_METHODDECL(method, $2, $3, $5, $8, $9, $11)
+	$$ = method;
+	ast_method_print(stderr, 1, method);
 }
 
-FormalList: Type id FormalRest {puts("FormalList");}
-	| /* empty */
+FormalList: Type id FormalRest {
+		AST_VARDECL(decl, $1, $2)
+		decl->next = $3;
+		$$ = decl;
+	}
+	| /* empty */ { $$ = NULL; }
 
-FormalRest: COMMA Type id FormalRest{puts("FormalRest");}
-	| /* empty */
+FormalRest: COMMA Type id FormalRest{
+		AST_VARDECL(decl, $2, $3)
+		decl->next = $4;
+		$$ = decl;
+	}
+	| /* empty */ { $$ = NULL; }
 
 /* EVERYTHING BELOW THIS LINE IS AST'D */
 

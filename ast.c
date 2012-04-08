@@ -214,3 +214,44 @@ void ast_method_print(FILE *file, int indent_level, ast_methoddecl *method)
 	if(method->next != NULL) // StmtList
 		ast_method_print(file, indent_level, method->next);
 }
+
+void ast_class_print(FILE *file, int indent_level, ast_classdecl *class)
+{
+	if(class == NULL)
+		return; // If MethodList is empty, print nothing.
+
+	print_indent(file, indent_level);
+	fprintf(file, "CLASS_DECL(%s):\n", class->id);
+	print_indent(file, indent_level + 1);
+	fprintf(file, "FIELDS:\n");
+		ast_vardecl_print(file, indent_level + 2, class->fields);
+	print_indent(file, indent_level + 1);
+	fprintf(file, "METHODS:\n");
+		ast_method_print(file, indent_level + 2, class->methods);
+
+	if(class->next != NULL) // StmtList
+		ast_class_print(file, indent_level, class->next);
+}
+
+void ast_main_print(FILE *file, int indent_level, ast_mainclass *main_class)
+{
+	print_indent(file, indent_level);
+	fprintf(file, "MAIN_CLASS(%s):\n", main_class->id);
+	print_indent(file, indent_level + 1);
+	fprintf(file, "VAR_DECL:\n");
+		ast_vardecl_print(file, indent_level + 2, main_class->main_vars);
+	print_indent(file, indent_level + 1);
+	fprintf(file, "BODY:\n");
+		ast_stmt_print(file, indent_level + 2, main_class->main_body);
+}
+
+void ast_program_print(FILE *file, int indent_level, ast_program *program)
+{
+	print_indent(file, indent_level);
+	fprintf(file, "PROGRAM:\n");
+		ast_main_print(file, indent_level + 1, &program->main_class);
+	print_indent(file, indent_level + 1);
+	fprintf(file, "CLASSES:\n");
+		ast_class_print(file, indent_level + 2, program->class_list);
+}
+

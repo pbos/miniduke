@@ -106,6 +106,29 @@ typedef struct ast_methoddecl {
 	struct ast_methoddecl *next; // MethodList
 } ast_methoddecl;
 
+typedef struct ast_classdecl {
+	const char *id;
+
+	ast_vardecl *fields;
+	ast_methoddecl *methods;
+
+	ast_methoddecl *main; // MainClass
+
+	struct ast_classdecl *next; // ClassList
+} ast_classdecl;
+
+typedef struct
+{
+	const char *id;
+	ast_vardecl *main_vars;
+	ast_stmt *main_body;
+} ast_mainclass;
+
+typedef struct {
+	ast_mainclass main_class;
+	ast_classdecl *class_list;
+} ast_program;
+
 #define AST_EXPR_EMPTY(name, expr_type) ast_expr *name = malloc(sizeof(ast_expr)); name->type = expr_type; name->next = NULL;
 #define AST_EXPR(name, type, assign) AST_EXPR_EMPTY(name, type) name->assign;
 
@@ -122,10 +145,22 @@ typedef struct ast_methoddecl {
 	name->id = method_id; name->params = method_params; name->var_decl = method_vars; \
 	name->body = method_body; name->return_expr = method_return;
 
+#define AST_CLASSDECL(name, class_id, class_fields, class_methods) ast_classdecl *name = malloc(sizeof(ast_classdecl)); \
+	name->next = NULL; name->id = class_id; name->fields = class_fields; name->methods = class_methods;
+
+#define AST_MAINCLASS(name, class_id, vars, body) \
+	ast_mainclass name; name.id = class_id; name.main_vars = vars; name.main_body = body;
+
+#define AST_PROGRAM(name, main, classlist) \
+	ast_program name; name.main_class = main; name.class_list = classlist;
+
 void ast_expr_print(FILE *file, int indent_level, ast_expr *expr);
 void ast_stmt_print(FILE *file, int indent_level, ast_stmt *stmt);
 void ast_vardecl_print(FILE *file, int indent_level, ast_vardecl *decl);
 void ast_method_print(FILE *file, int indent_level, ast_methoddecl *method);
+void ast_class_print(FILE *file, int indent_level, ast_classdecl *class);
+void ast_main_print(FILE *file, int indent_level, ast_mainclass *main_class);
+void ast_program_print(FILE *file, int indent_level, ast_program *program);
 
 // TODO: void ast_type_print(FILE *file, int indent_level, ast_type *type);
 

@@ -22,6 +22,9 @@
 	ast_stmt *stmt;
 	ast_vardecl *decl;
 	ast_methoddecl *method;
+	ast_classdecl *class;
+	ast_mainclass main;
+	ast_program program;
 	ast_type type;
 }
 
@@ -80,6 +83,9 @@
 %type <decl> VarDecl VarList FormalList FormalRest
 %type <type> Type
 %type <method> MethodDecl MethodList
+%type <class> ClassDecl ClassList
+%type <main> MainClass
+%type <program> Program
 
 %start Program
 
@@ -87,17 +93,29 @@
 
 %%
 
-Program: MainClass ClassList {puts("Program");}
+Program: MainClass ClassList {
+		AST_PROGRAM(program, $1, $2)
+		$$ = program;
+		ast_program_print(stderr, 0, &program);
+	}
 
 MainClass: CLASS id LBLOCK PUBLIC STATIC VOID id LPAREN STRING LBRACK RBRACK id RPAREN LBLOCK VarList StmtList RBLOCK RBLOCK {
-	printf("MainClass(%s)\n", $2);
-	ast_stmt_print(stderr, 1, $16);
-}
+		if(strcmp("main", $7))
+			md_error(yylineno, "MiniJava only supports the static method 'main'.");
 
-ClassList: ClassList ClassDecl
-	| /* empty */
+		AST_MAINCLASS(main_class, $2, $15, $16);
+		$$ = main_class;
+	}
 
-ClassDecl: CLASS id LBLOCK VarList MethodList RBLOCK {printf("ClassDecl(%s)\n", $2);}
+ClassList: ClassDecl ClassList { $1->next = $2; }
+	| /* empty */ { $$ = NULL; }
+
+ClassDecl: CLASS id LBLOCK VarList MethodList RBLOCK {
+		AST_CLASSDECL(class, $2, $4, $5);
+		$$ = class;
+	}
+
+/* EVERYTHING BELOW THIS LINE IS AST'D */
 
 VarList: VarList VarDecl {
 		if($1 == NULL)
@@ -124,7 +142,6 @@ MethodList: MethodDecl MethodList { $1->next = $2; $$ = $1; }
 MethodDecl: PUBLIC Type id LPAREN FormalList RPAREN LBLOCK VarList StmtList RETURN Exp SCOLON RBLOCK {
 	AST_METHODDECL(method, $2, $3, $5, $8, $9, $11)
 	$$ = method;
-	ast_method_print(stderr, 1, method);
 }
 
 FormalList: Type id FormalRest {
@@ -140,8 +157,6 @@ FormalRest: COMMA Type id FormalRest{
 		$$ = decl;
 	}
 	| /* empty */ { $$ = NULL; }
-
-/* EVERYTHING BELOW THIS LINE IS AST'D */
 
 Type: INT LBRACK RBRACK { AST_TYPE(type, VAR_INT_ARRAY); $$ = type; }
 	| BOOL { AST_TYPE(type, VAR_BOOL); $$ = type; }

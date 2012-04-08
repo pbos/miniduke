@@ -47,7 +47,9 @@ typedef enum {
 	BLOCK,
 	IF_ELSE,
 	WHILE_STMT,
-	SYS_OUT
+	SYS_OUT,
+	VAR_ASSIGN,
+	ARRAY_ASSIGN,
 } ast_stmt_type;
 
 typedef struct ast_stmt {
@@ -63,6 +65,11 @@ typedef struct ast_stmt {
 					struct ast_stmt *true_branch, *false_branch;
 				};
 			};
+		};
+		struct { // VAR_ASSIGN / ARRAY_ASSIGN
+			const char *id;
+			ast_expr *assign_expr; // VAR_ASSIGN / ARRAY_ASSIGN
+			ast_expr *array_index; // ARRAY_ASSIGN
 		};
 		struct ast_expr *expr; // SYSO
 	};

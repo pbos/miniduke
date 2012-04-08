@@ -87,7 +87,10 @@
 
 Program: MainClass ClassList {puts("Program");}
 
-MainClass: CLASS id LBLOCK PUBLIC STATIC VOID id LPAREN STRING LBRACK RBRACK id RPAREN LBLOCK VarList StmtList RBLOCK RBLOCK {printf("MainClass(%s)\n", $2);}
+MainClass: CLASS id LBLOCK PUBLIC STATIC VOID id LPAREN STRING LBRACK RBRACK id RPAREN LBLOCK VarList StmtList RBLOCK RBLOCK {
+	printf("MainClass(%s)\n", $2);
+	ast_stmt_print(stderr, 1, $16);
+}
 
 ClassList: ClassList ClassDecl
 	| /* empty */
@@ -112,13 +115,18 @@ VarDecl: Type id SCOLON {
 MethodList: MethodDecl MethodList 
 	| /* empty */
 
-MethodDecl: PUBLIC Type id LPAREN FormalList RPAREN LBLOCK VarList StmtList RETURN Exp SCOLON RBLOCK {printf("MethodDecl(%s)\n", $3);}
+MethodDecl: PUBLIC Type id LPAREN FormalList RPAREN LBLOCK VarList StmtList RETURN Exp SCOLON RBLOCK {
+	printf("MethodDecl(%s)\n", $3);
+	ast_stmt_print(stderr, 1, $9);
+}
 
 FormalList: Type id FormalRest {puts("FormalList");}
 	| /* empty */
 
 FormalRest: COMMA Type id FormalRest{puts("FormalRest");}
 	| /* empty */
+
+/* EVERYTHING BELOW THIS LINE IS AST'D */
 
 Type: INT LBRACK RBRACK { AST_TYPE(type, VAR_INT_ARRAY); $$ = type; }
 	| BOOL { AST_TYPE(type, VAR_BOOL); $$ = type; }
@@ -131,7 +139,6 @@ StmtList: Stmt StmtList { $$ = $1; $$->next = $2; }
 Stmt: LBLOCK StmtList RBLOCK {
 		AST_STMT(stmt, BLOCK, stmt_list = $2)
 		$$ = stmt;
-		ast_stmt_print(stderr, 2, stmt);
 	}
 	| IF LPAREN Exp RPAREN Stmt ELSE Stmt {
 		AST_STMT(stmt, IF_ELSE, cond = $3)
@@ -149,11 +156,16 @@ Stmt: LBLOCK StmtList RBLOCK {
 		$$ = stmt;
 	}
 	| id ASSIGN Exp SCOLON {
-		printf("Stmt:Assign(%s)\n", $1);
-		ast_expr_print(stderr, 1, $3);
+		AST_STMT(stmt, VAR_ASSIGN, id = $1)
+		stmt->assign_expr = $3;
+		$$ = stmt;
 	}
-	| id LBRACK Exp RBRACK ASSIGN Exp SCOLON {printf("Stmt:ArrayAssign(%s)\n", $1);}
-
+	| id LBRACK Exp RBRACK ASSIGN Exp SCOLON {
+		AST_STMT(stmt, ARRAY_ASSIGN, id = $1)
+		stmt->array_index = $3;
+		stmt->assign_expr = $6;
+		$$ = stmt;
+	}
 Exp: Exp Op Exp {
 		AST_EXPR_EMPTY(exp, BINOP)
 		exp->lhs = $1;

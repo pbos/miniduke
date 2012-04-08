@@ -185,7 +185,7 @@ void ast_vardecl_print(FILE *file, int indent_level, ast_vardecl *decl)
 		return; // If VarList is empty, print nothing.
 
 	print_indent(file, indent_level);
-	fprintf(file, "VARDECL(%s : %s)\n", decl->id, ast_type_str(decl->type));
+	fprintf(file, "%s : %s\n", decl->id, ast_type_str(decl->type));
 
 	if(decl->next != NULL)
 		ast_vardecl_print(file, indent_level, decl->next);

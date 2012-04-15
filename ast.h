@@ -6,6 +6,21 @@
 #include <stdbool.h>
 
 typedef enum {
+	VAR_BOOL,
+	VAR_INT,
+	VAR_INT_ARRAY,
+	VAR_CLASS
+} ast_var_type;
+
+struct symtab_class;
+
+typedef struct {
+	ast_var_type type;
+	char *classname; // Used by VAR_CLASS
+	struct symtab_class *class; // Used by VAR_CLASS during typecheck
+} ast_type;
+
+typedef enum {
 	INT_CONST,
 	BOOL_CONST,
 	VARNAME,
@@ -22,6 +37,7 @@ typedef enum {
 typedef struct ast_expr {
 	// TODO: int lineno;
 	ast_expr_type type;
+	ast_type expr_type; // Used during typecheck
 	union {
 		int32_t int_const; // INT_CONST
 		bool bool_const; // BOOL_CONST
@@ -75,18 +91,6 @@ typedef struct ast_stmt {
 	};
 	struct ast_stmt *next; // Non-NULL => StmtList
 } ast_stmt;
-
-typedef enum {
-	VAR_BOOL,
-	VAR_INT,
-	VAR_INT_ARRAY,
-	VAR_CLASS
-} ast_var_type;
-
-typedef struct {
-	ast_var_type type;
-	char *classname; // Used by VAR_CLASS
-} ast_type;
 
 typedef struct ast_vardecl {
 	ast_type type;

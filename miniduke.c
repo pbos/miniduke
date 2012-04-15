@@ -10,6 +10,7 @@ extern int yyparse();
 const char *filename;
 
 ast_program md_ast;
+symtab_program md_symtab;
 
 void md_error(int lineno, const char *error, ...)
 {

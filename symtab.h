@@ -8,7 +8,7 @@ struct symtab_method;
 
 typedef struct symtab_var
 {
-	ast_var_type var_type;
+	ast_type type
 	const char *id;
 
 	enum {
@@ -43,6 +43,7 @@ typedef struct symtab_class {
 typedef struct
 {
 	const char *main_class;
+	symtab_method main;
 
 	symtab_class *classes;
 } symtab_program;

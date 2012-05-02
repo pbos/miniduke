@@ -32,6 +32,7 @@ symtab_method *symtab_init_methods(ast_methoddecl *methods)
 
 	method->next = symtab_init_methods(methods->next);
 
+	method->params = symtab_init_vars(methods->params);
 	method->locals = symtab_init_vars(methods->var_decl);
 
 	method->id = methods->id;
@@ -88,12 +89,15 @@ void symtab_print_methods(FILE *file, int indent, symtab_method *methods)
 	print_indent(file, indent);
 	fprintf(file, "%s : %s\n", methods->id, ast_type_str(methods->type));
 
-	if(methods->locals != NULL)
-	{
+	print_indent(file, indent+1);
+	fputs("params:\n", file);
+	symtab_print_vars(file, indent+2, methods->params);
+	fputs("\n", file);
+
 	print_indent(file, indent+1);
 	fputs("local:\n", file);
-		symtab_print_vars(file, indent+2, methods->locals);
-	}
+	symtab_print_vars(file, indent+2, methods->locals);
+	fputs("\n", file);
 
 	symtab_print_methods(file, indent, methods->next);
 }
@@ -106,17 +110,15 @@ void symtab_print_classes(FILE *file, symtab_class *class)
 	print_indent(file, 1);
 	fprintf(file, "%s:\n", class->id);
 
-	if(class->fields != NULL)
-	{
 	print_indent(file, 2);
 	fputs("fields:\n", file);
 	symtab_print_vars(file, 3, class->fields);
 	fputs("\n", file);
-	}
 
 	print_indent(file, 2);
 	fputs("methods:\n", file);
 	symtab_print_methods(file, 3, class->methods);
+	fputs("\n", file);
 
 	symtab_print_classes(file, class->next);
 }

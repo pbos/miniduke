@@ -28,6 +28,7 @@ typedef struct symtab_method {
 	ast_type type;
 	const char *id;
 
+	symtab_var *params;
 	symtab_var *locals;
 
 	struct symtab_class *class;

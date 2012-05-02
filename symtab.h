@@ -46,7 +46,7 @@ typedef struct symtab_class {
 typedef struct
 {
 	const char *main_class;
-	symtab_method main;
+	symtab_method *main_method;
 
 	symtab_class *classes;
 } symtab_program;

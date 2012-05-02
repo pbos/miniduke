@@ -174,6 +174,10 @@ const char *ast_type_str(ast_type type)
 			return "int[]";
 		case VAR_CLASS:
 			return type.classname;
+		case VAR_STRING_ARRAY:
+			return "String[]";
+		case VAR_VOID:
+			return "void";
 		default:
 			return "-- UNKNOWN TYPE --";
 	}
@@ -237,12 +241,7 @@ void ast_main_print(FILE *file, int indent_level, ast_mainclass *main_class)
 {
 	print_indent(file, indent_level);
 	fprintf(file, "MAIN_CLASS(%s):\n", main_class->id);
-	print_indent(file, indent_level + 1);
-	fprintf(file, "VAR_DECL:\n");
-		ast_vardecl_print(file, indent_level + 2, main_class->main_vars);
-	print_indent(file, indent_level + 1);
-	fprintf(file, "BODY:\n");
-		ast_stmt_print(file, indent_level + 2, main_class->main_body);
+		ast_method_print(file, indent_level + 1, main_class->method);
 }
 
 void ast_program_print(FILE *file, int indent_level, ast_program *program)

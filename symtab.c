@@ -63,6 +63,7 @@ void symtab_init()
 	md_symtab.main_class = md_ast.main_class.id;
 
 	// Read main method
+	md_symtab.main_method = symtab_init_methods(md_ast.main_class.method);
 
 	// Parse other classes
 	md_symtab.classes = symtab_init_classes(md_ast.class_list);
@@ -126,9 +127,7 @@ void symtab_print_classes(FILE *file, symtab_class *class)
 void symtab_print(FILE *file)
 {
 	fprintf(file, "%s:\n", md_symtab.main_class);
-	print_indent(file, 1);
-	fprintf(file, "main:\n");
-	symtab_print_vars(file, 1, md_symtab.main.locals);
+	symtab_print_methods(file, 1, md_symtab.main_method);
 
 	fputs("\nclasses:\n", file);
 

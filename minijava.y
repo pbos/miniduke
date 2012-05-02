@@ -100,7 +100,24 @@ MainClass: CLASS id LBLOCK PUBLIC STATIC VOID id LPAREN STRING LBRACK RBRACK id 
 		if(strcmp("main", $7))
 			md_error(yylineno, "MiniJava only supports the static method 'main'.");
 
-		AST_MAINCLASS(main_class, $2, $15, $16);
+		// main parameters
+		ast_vardecl *main_params = calloc(1, sizeof(ast_vardecl));
+		main_params->type.type = VAR_STRING_ARRAY;
+		main_params->id = $12;
+
+		// main method
+		ast_methoddecl *main_method = calloc(1, sizeof(ast_methoddecl));
+		main_method->params = main_params;
+		main_method->type.type = VAR_VOID;
+		main_method->id = "main";
+		main_method->var_decl = $15;
+		main_method->body = $16;
+
+		// main class
+		ast_mainclass main_class = {0};
+		main_class.id = $2;
+		main_class.method = main_method;
+
 		$$ = main_class;
 	}
 

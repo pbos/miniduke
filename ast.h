@@ -6,6 +6,9 @@
 #include <stdbool.h>
 
 typedef enum {
+	VAR_UNKNOWN = 0, // default should flip out
+	VAR_VOID,
+	VAR_STRING_ARRAY,
 	VAR_BOOL,
 	VAR_INT,
 	VAR_INT_ARRAY,
@@ -116,16 +119,13 @@ typedef struct ast_classdecl {
 	ast_vardecl *fields;
 	ast_methoddecl *methods;
 
-	ast_methoddecl *main; // MainClass
-
 	struct ast_classdecl *next; // ClassList
 } ast_classdecl;
 
 typedef struct
 {
 	const char *id;
-	ast_vardecl *main_vars;
-	ast_stmt *main_body;
+	ast_methoddecl *method;
 } ast_mainclass;
 
 typedef struct {
@@ -151,9 +151,6 @@ typedef struct {
 
 #define AST_CLASSDECL(name, class_id, class_fields, class_methods) ast_classdecl *name = malloc(sizeof(ast_classdecl)); \
 	name->next = NULL; name->id = class_id; name->fields = class_fields; name->methods = class_methods;
-
-#define AST_MAINCLASS(name, class_id, vars, body) \
-	ast_mainclass name; name.id = class_id; name.main_vars = vars; name.main_body = body;
 
 #define AST_PROGRAM(name, main, classlist) \
 	ast_program name; name.main_class = main; name.class_list = classlist;

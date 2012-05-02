@@ -55,5 +55,8 @@ int main(int argc, char *argv[])
 	else
 		fprintf(stderr, "warning: couldn't open AST file '%s' for writing.\n", ast_filename);
 
+	symtab_init();
+	symtab_print(stderr);
+
 	return 0;
 }

@@ -1,15 +1,21 @@
 %{
 #include "minijava.tab.h"
+#include "miniduke.h"
 %}
 %option nodefault yylineno noyywrap
+%x IN_COMMENT
 %%
 
 
  /* ignore whitespace */
-[ \t\n]+ ;
+[ \t\n\r]+ ;
  /* ignore comments*/
 "//".* ;
- /* TODO ignore block comments */
+ /* ignore block comments*/
+"/*" BEGIN(IN_COMMENT);
+<IN_COMMENT>.|[\n\r] ;
+<IN_COMMENT>"*/" BEGIN(INITIAL);
+
  /* keywords */
 "class" return CLASS;
 "public" return PUBLIC;
@@ -60,7 +66,9 @@
 
  /* identifier/numbers */
 [0-9]+ yylval.id = strdup(yytext); return int_lit;
-[a-zA-Z][_a-zA-Z0-9]* yylval.id = strdup(yytext); return id;
+[_a-zA-Z][_a-zA-Z0-9]* yylval.id = strdup(yytext); return id;
+
+. md_error(yylineno, "Bad input character '%s'.", yytext);
 
 %%
 

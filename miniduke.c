@@ -21,7 +21,7 @@ void md_error(int lineno, const char *error, ...)
 	va_end (args); 
 	fputs("\n", stderr);
 
-	exit(-1);
+	exit(1);
 }
 
 extern FILE *yyin;
@@ -39,10 +39,10 @@ int main(int argc, char *argv[])
 	{
 		fprintf(stderr, "%s: ", argv[1]);
 		perror("");
-		return -1;
+		return 1;
 	}
 	if(yyparse())
-		return -1;
+		return 1;
 
 	char ast_filename[strlen(md_ast.main_class.id) + strlen(".syntax") + 1];
 	sprintf(ast_filename, "%s.syntax", md_ast.main_class.id);

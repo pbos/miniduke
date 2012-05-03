@@ -129,7 +129,7 @@ void symtab_print(FILE *file)
 	fprintf(file, "%s:\n", md_symtab.main_class);
 	symtab_print_methods(file, 1, md_symtab.main_method);
 
-	fputs("\nclasses:\n", file);
+	fputs("classes:\n", file);
 
 	symtab_print_classes(file, md_symtab.classes);
 }

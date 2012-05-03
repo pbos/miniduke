@@ -117,6 +117,7 @@ MainClass: CLASS id LBLOCK PUBLIC STATIC VOID id LPAREN STRING LBRACK RBRACK id 
 		ast_mainclass main_class = {0};
 		main_class.id = $2;
 		main_class.method = main_method;
+		main_class.lineno = yylineno;
 
 		$$ = main_class;
 	}

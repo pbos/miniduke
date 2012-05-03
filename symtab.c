@@ -5,7 +5,7 @@
 
 extern void print_indent(FILE *file, int indent_level);
 
-symtab_var *symtab_init_vars(ast_vardecl *decl)
+symtab_var *symtab_init_vars(ast_vardecl *decl, symtab_parent parent)
 {
 	if(decl == NULL)
 		return NULL;
@@ -14,14 +14,17 @@ symtab_var *symtab_init_vars(ast_vardecl *decl)
 
 	symtab_var *var = calloc(1, sizeof(symtab_var));
 
-	var->next = symtab_init_vars(decl->next);
+	var->lineno = decl->lineno;
+	var->next = symtab_init_vars(decl->next, parent);
 	var->type = decl->type;
 	var->id = decl->id;
+
+	var->parent = parent;
 
 	return var;
 }
 
-symtab_method *symtab_init_methods(ast_methoddecl *methods)
+symtab_method *symtab_init_methods(ast_methoddecl *methods, symtab_class *parent)
 {
 	if(methods == NULL)
 		return NULL;
@@ -29,11 +32,16 @@ symtab_method *symtab_init_methods(ast_methoddecl *methods)
 	// CHECK FOR DUPLICATES
 
 	symtab_method *method = calloc(1, sizeof(symtab_method));
+	method->lineno = methods->lineno;
 
-	method->next = symtab_init_methods(methods->next);
+	method->next = symtab_init_methods(methods->next, parent);
+	symtab_parent sym_parent;
+	sym_parent.type = SYM_METHOD;
+	sym_parent.method = method;
+	method->params = symtab_init_vars(methods->params, sym_parent);
 
-	method->params = symtab_init_vars(methods->params);
-	method->locals = symtab_init_vars(methods->var_decl);
+	method->locals = symtab_init_vars(methods->var_decl, sym_parent);
+	method->class = parent;
 
 	method->id = methods->id;
 	method->type = methods->type;
@@ -47,10 +55,14 @@ symtab_class *symtab_init_classes(ast_classdecl *class)
 		return NULL;
 
 	symtab_class *symclass = calloc(1, sizeof(symtab_class));
+	symclass->lineno = class->lineno;
 
 	symclass->id = class->id;
-	symclass->fields = symtab_init_vars(class->fields);
-	symclass->methods = symtab_init_methods(class->methods);
+	symtab_parent parent;
+	parent.type = SYM_CLASS;
+	parent.class = symclass;
+	symclass->fields = symtab_init_vars(class->fields, parent);
+	symclass->methods = symtab_init_methods(class->methods, symclass);
 
 	symclass->next = symtab_init_classes(class->next);
 
@@ -63,7 +75,7 @@ void symtab_init()
 	md_symtab.main_class = md_ast.main_class.id;
 
 	// Read main method
-	md_symtab.main_method = symtab_init_methods(md_ast.main_class.method);
+	md_symtab.main_method = symtab_init_methods(md_ast.main_class.method, NULL);
 
 	// Parse other classes
 	md_symtab.classes = symtab_init_classes(md_ast.class_list);

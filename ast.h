@@ -38,7 +38,7 @@ typedef enum {
 } ast_expr_type;
 
 typedef struct ast_expr {
-	// TODO: int lineno;
+	int lineno;
 	ast_expr_type type;
 	ast_type expr_type; // Used during typecheck
 	union {
@@ -72,7 +72,7 @@ typedef enum {
 } ast_stmt_type;
 
 typedef struct ast_stmt {
-	// TODO: int lineno;
+	int lineno;
 	ast_stmt_type type;
 	union {
 		struct ast_stmt *stmt_list; // BLOCK
@@ -96,6 +96,7 @@ typedef struct ast_stmt {
 } ast_stmt;
 
 typedef struct ast_vardecl {
+	int lineno;
 	ast_type type;
 
 	const char *id;
@@ -104,6 +105,7 @@ typedef struct ast_vardecl {
 } ast_vardecl;
 
 typedef struct ast_methoddecl {
+	int lineno;
 	ast_type type;
 	const char *id;
 	ast_vardecl *params;
@@ -114,6 +116,7 @@ typedef struct ast_methoddecl {
 } ast_methoddecl;
 
 typedef struct ast_classdecl {
+	int lineno;
 	const char *id;
 
 	ast_vardecl *fields;
@@ -124,6 +127,7 @@ typedef struct ast_classdecl {
 
 typedef struct
 {
+	int lineno;
 	const char *id;
 	ast_methoddecl *method;
 } ast_mainclass;
@@ -133,13 +137,13 @@ typedef struct {
 	ast_classdecl *class_list;
 } ast_program;
 
-#define AST_EXPR_EMPTY(name, expr_type) ast_expr *name = malloc(sizeof(ast_expr)); name->type = expr_type; name->next = NULL;
+#define AST_EXPR_EMPTY(name, expr_type) ast_expr *name = malloc(sizeof(ast_expr)); name->type = expr_type; name->lineno = yylineno; name->next = NULL;
 #define AST_EXPR(name, type, assign) AST_EXPR_EMPTY(name, type) name->assign;
 
-#define AST_STMT_EMPTY(name, stmt_type) ast_stmt *name = malloc(sizeof(ast_stmt)); name->type = stmt_type; name->next = NULL;
+#define AST_STMT_EMPTY(name, stmt_type) ast_stmt *name = malloc(sizeof(ast_stmt)); name->type = stmt_type; name->lineno = yylineno; name->next = NULL;
 #define AST_STMT(name, type, assign) AST_STMT_EMPTY(name, type) name->assign;
 
-#define AST_VARDECL(name, var_type, var_id) ast_vardecl *name = malloc(sizeof(ast_vardecl)); name->type = var_type; name->id = var_id; name->next = NULL;
+#define AST_VARDECL(name, var_type, var_id) ast_vardecl *name = malloc(sizeof(ast_vardecl)); name->type = var_type; name->id = var_id; name->lineno = yylineno; name->next = NULL;
 
 #define AST_TYPE(name, var_type) ast_type name; name.type = var_type;
 #define AST_CLASS(name, class_id) AST_TYPE(name, VAR_CLASS); name.classname = class_id;
@@ -147,10 +151,10 @@ typedef struct {
 #define AST_METHODDECL(name, method_type, method_id, method_params, method_vars, method_body, method_return) \
 	ast_methoddecl *name = malloc(sizeof(ast_methoddecl)); name->next = NULL; name->type = method_type; \
 	name->id = method_id; name->params = method_params; name->var_decl = method_vars; \
-	name->body = method_body; name->return_expr = method_return;
+	name->body = method_body; name->lineno = yylineno; name->return_expr = method_return;
 
 #define AST_CLASSDECL(name, class_id, class_fields, class_methods) ast_classdecl *name = malloc(sizeof(ast_classdecl)); \
-	name->next = NULL; name->id = class_id; name->fields = class_fields; name->methods = class_methods;
+	name->lineno = yylineno; name->next = NULL; name->id = class_id; name->fields = class_fields; name->methods = class_methods;
 
 #define AST_PROGRAM(name, main, classlist) \
 	ast_program name; name.main_class = main; name.class_list = classlist;
@@ -162,8 +166,6 @@ void ast_method_print(FILE *file, int indent_level, ast_methoddecl *method);
 void ast_class_print(FILE *file, int indent_level, ast_classdecl *class);
 void ast_main_print(FILE *file, int indent_level, ast_mainclass *main_class);
 void ast_program_print(FILE *file, int indent_level, ast_program *program);
-
-// TODO: void ast_type_print(FILE *file, int indent_level, ast_type *type);
 
 #endif
 

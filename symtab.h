@@ -6,25 +6,32 @@
 struct symtab_class;
 struct symtab_method;
 
-typedef struct symtab_var
+typedef struct
 {
-	ast_type type;
-	const char *id;
-
 	enum {
-		SYM_METHOD,
-		SYM_CLASS,
-	} var_location;
+	SYM_METHOD,
+	SYM_CLASS,
+	} type;
 
 	union {
 		struct symtab_class *class;
 		struct symtab_method *method;
 	};
+} symtab_parent;
+
+typedef struct symtab_var
+{
+	int lineno;
+	ast_type type;
+	const char *id;
+
+	symtab_parent parent;
 
 	struct symtab_var *next;
 } symtab_var;
 
 typedef struct symtab_method {
+	int lineno;
 	ast_type type;
 	const char *id;
 
@@ -36,6 +43,7 @@ typedef struct symtab_method {
 } symtab_method;
 
 typedef struct symtab_class {
+	int lineno;
 	const char *id;
 	symtab_var *fields;
 	symtab_method *methods;
@@ -45,6 +53,7 @@ typedef struct symtab_class {
 
 typedef struct
 {
+	int main_lineno;
 	const char *main_class;
 	symtab_method *main_method;
 

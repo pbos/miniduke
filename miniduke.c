@@ -61,10 +61,6 @@ void parse_args(int argc, char *argv[])
 
 int main(int argc, char *argv[])
 {
-	int i;
-	for(i = 0; i < argc; ++i)
-		puts(argv[i]);
-
 	parse_args(argc, argv);
 
 	if(filename == NULL)

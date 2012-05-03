@@ -104,6 +104,7 @@ MainClass: CLASS id LBLOCK PUBLIC STATIC VOID id LPAREN STRING LBRACK RBRACK id 
 		ast_vardecl *main_params = calloc(1, sizeof(ast_vardecl));
 		main_params->type.type = VAR_STRING_ARRAY;
 		main_params->id = $12;
+		main_params->lineno = yylineno;
 
 		// main method
 		ast_methoddecl *main_method = calloc(1, sizeof(ast_methoddecl));

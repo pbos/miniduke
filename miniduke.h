@@ -3,6 +3,7 @@
 
 #include "minijava.tab.h"
 #include "symtab.h"
+#include "typecheck.h"
 
 void md_error(int lineno, const char *error, ...);
 

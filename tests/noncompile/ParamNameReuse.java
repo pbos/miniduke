@@ -5,5 +5,6 @@ class ParamNameReuse {
 
 class PNR {
 	public int foo(int bar, int bar) { // : bar is already defined in foo
+		return 0;
 	}
 }

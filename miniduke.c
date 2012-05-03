@@ -95,6 +95,9 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "warning: couldn't open AST file '%s' for writing.\n", ast_filename);
 
 	symtab_init();
+
+	typecheck();
+
 	symtab_print(stderr);
 
 	return 0;

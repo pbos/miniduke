@@ -10,8 +10,6 @@ symtab_var *symtab_init_vars(ast_vardecl *decl, symtab_parent parent)
 	if(decl == NULL)
 		return NULL;
 
-	// CHECK FOR DUPLICATES
-
 	symtab_var *var = calloc(1, sizeof(symtab_var));
 
 	var->lineno = decl->lineno;
@@ -28,8 +26,6 @@ symtab_method *symtab_init_methods(ast_methoddecl *methods, symtab_class *parent
 {
 	if(methods == NULL)
 		return NULL;
-
-	// CHECK FOR DUPLICATES
 
 	symtab_method *method = calloc(1, sizeof(symtab_method));
 	method->lineno = methods->lineno;

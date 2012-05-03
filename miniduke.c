@@ -4,10 +4,11 @@
 #include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h> //chdir for -o
 
 extern int yyparse();
 
-const char *filename;
+const char *filename = NULL;
 
 ast_program md_ast;
 symtab_program md_symtab;
@@ -26,14 +27,49 @@ void md_error(int lineno, const char *error, ...)
 
 extern FILE *yyin;
 
+char *out_dir = NULL;
+
+void usage()
+{
+	fputs("usage: miniduke [file.java]\n", stderr);
+	exit(1);
+}
+
+void parse_args(int argc, char *argv[])
+{
+	int i;
+	for(i = 1; i < argc; ++i)
+	{
+		if(!strcmp(argv[i], "-o"))
+		{
+			++i;
+			if(i == argc)
+			{
+				fputs("usage: -o expects argument\n", stderr);
+				exit(1);
+			}
+
+			out_dir = argv[i];
+			continue;
+		}
+		if(filename != NULL)
+			usage();
+
+		filename = argv[i];
+	}
+}
+
 int main(int argc, char *argv[])
 {
-	if(argc != 2)
-	{
-		fputs("usage: miniduke [file.java]\n", stderr);
-		return -1;
-	}
-	filename = argv[1];
+	int i;
+	for(i = 0; i < argc; ++i)
+		puts(argv[i]);
+
+	parse_args(argc, argv);
+
+	if(filename == NULL)
+		usage();
+
 	yyin = fopen(filename, "r");
 	if(yyin == NULL)
 	{
@@ -43,6 +79,9 @@ int main(int argc, char *argv[])
 	}
 	if(yyparse())
 		return 1;
+
+	if(out_dir != NULL)
+		chdir(out_dir);
 
 	char ast_filename[strlen(md_ast.main_class.id) + strlen(".syntax") + 1];
 	sprintf(ast_filename, "%s.syntax", md_ast.main_class.id);

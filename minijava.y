@@ -130,8 +130,6 @@ ClassDecl: CLASS id LBLOCK VarList MethodList RBLOCK {
 		$$ = class;
 	}
 
-/* EVERYTHING BELOW THIS LINE IS AST'D */
-
 VarList: VarList VarDecl {
 		if($1 == NULL)
 			$$ = $2;

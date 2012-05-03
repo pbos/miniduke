@@ -5,3 +5,4 @@ minijava.tab.h
 minijava.tab.c
 minijava.output
 *.syntax
+*.class

@@ -94,7 +94,7 @@ int main(int argc, char *argv[])
 
 	typecheck();
 
-	symtab_print(stderr);
+	symtab_print(stdout);
 
 	return 0;
 }

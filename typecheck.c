@@ -72,12 +72,3 @@ void typecheck_symtab()
 		typecheck_classes(class);
 }
 
-void typecheck_ast()
-{
-}
-
-void typecheck()
-{
-	typecheck_symtab();
-	typecheck_ast();
-}

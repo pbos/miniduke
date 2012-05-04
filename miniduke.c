@@ -92,9 +92,10 @@ int main(int argc, char *argv[])
 
 	symtab_init();
 
-	typecheck();
+	typecheck_symtab();
 
 	symtab_print(stdout);
 
 	return 0;
 }
+

@@ -10,7 +10,7 @@ class PrimeSieve {
 
 		i = 2;
 		while(i < 100){
-			if(sieve[i] == 0){
+			if(sieve[i] < 1){
 				System.out.println(i);
 				j = 2 * i;
 				while(j < 100) {
@@ -18,6 +18,7 @@ class PrimeSieve {
 					j = j + i;
 				}
 			}
+			else {}
 			i = i + 1;
 		}
 	}

@@ -17,11 +17,25 @@ void typecheck_varlist(symtab_var *varlist, symtab_var *var)
 void typecheck_method(symtab_method *method)
 {
 	symtab_method *methods;
-
 	for(methods = method->class->methods; methods != NULL; methods = methods->next)
 	{
 		if(methods != method && !strcmp(method->id, methods->id))
 			md_error(methods->lineno, "%s is already defined in %s.", methods->id, methods->class->id);
+	}
+
+	symtab_var *var;
+	for(var = method->params; var != NULL; var = var->next)
+		typecheck_varlist(method->params, var);
+
+	for(var = method->locals; var != NULL; var = var->next)
+	{
+		symtab_var *param;
+		for(param = method->params; param != NULL; param = param->next)
+		{
+			if(param != var && !strcmp(var->id, param->id))
+				md_error(var->lineno, "'%s' is already defined on line %d.", var->id, param->lineno);
+		}
+		typecheck_varlist(method->locals, var);
 	}
 }
 
@@ -43,7 +57,7 @@ void typecheck_classes(symtab_class *class)
 		typecheck_method(method);
 }
 
-void typecheck()
+void typecheck_symtab()
 {
 	symtab_var *var;
 	for(var = md_symtab.main_method->locals; var != NULL; var = var->next)
@@ -58,3 +72,12 @@ void typecheck()
 		typecheck_classes(class);
 }
 
+void typecheck_ast()
+{
+}
+
+void typecheck()
+{
+	typecheck_symtab();
+	typecheck_ast();
+}

@@ -1,0 +1,395 @@
+#!/bin/bash
+
+flags=""
+#flags="-S -ast -w"
+
+output_dir="output"
+
+compile="./miniduke $flags" 
+#compile="java -cp mjc.jar mjc.JVMMain $flags" 
+javac="javac"
+jasmin="java -jar jasmin.jar"
+build="make"
+#build="ant"
+
+compile_tests="testcases/compile/*/*.java tests/compile/*.java"
+noncompile_tests="testcases/noncompile/*/*.java tests/noncompile/*.java"
+execute_tests="testcases/execute/*/*.java tests/execute/*.java"
+nonexecute_tests="testcases/nonexecute/*/*.java"
+
+###### COLORS
+txtblk='\e[0;30m' # Black - Regular
+txtred='\e[0;31m' # Red
+txtgrn='\e[0;32m' # Green
+txtylw='\e[0;33m' # Yellow
+txtblu='\e[0;34m' # Blue
+txtpur='\e[0;35m' # Purple
+txtcyn='\e[0;36m' # Cyan
+txtwht='\e[0;37m' # White
+bldblk='\e[1;30m' # Black - Bold
+bldred='\e[1;31m' # Red
+bldgrn='\e[1;32m' # Green
+bldylw='\e[1;33m' # Yellow
+bldblu='\e[1;34m' # Blue
+bldpur='\e[1;35m' # Purple
+bldcyn='\e[1;36m' # Cyan
+bldwht='\e[1;37m' # White
+unkblk='\e[4;30m' # Black - Underline
+undred='\e[4;31m' # Red
+undgrn='\e[4;32m' # Green
+undylw='\e[4;33m' # Yellow
+undblu='\e[4;34m' # Blue
+undpur='\e[4;35m' # Purple
+undcyn='\e[4;36m' # Cyan
+undwht='\e[4;37m' # White
+bakblk='\e[40m'   # Black - Background
+bakred='\e[41m'   # Red
+bakgrn='\e[42m'   # Green
+bakylw='\e[43m'   # Yellow
+bakblu='\e[44m'   # Blue
+bakpur='\e[45m'   # Purple
+bakcyn='\e[46m'   # Cyan
+bakwht='\e[47m'   # White
+txtrst='\e[0m'    # Text Reset
+##### END COLORS
+
+##Filename to dir
+function mkdirname() {
+	echo "$1" | sed 's/\.java//g' | tr '[A-Z]' '[a-z]'
+}
+
+function build_mjc() {
+	echo "Compiling compiler"
+	echo "=================="
+	res=$($build)
+	if [ $? -eq 0 ]; then
+		echo -e "$txtgrn OK $txtrst"
+		return 0
+	else
+		echo -e "$txtred ERROR $txtrst"
+		echo -e  "$res"
+		return 1
+	fi
+}
+
+## Functions
+function compile() {
+	_dirname=$(mkdirname $1)
+	mkdir -p "$output_dir/$_dirname"
+	eval $compile -o "$output_dir/$_dirname" $1 2>&1
+}
+
+function extention_list() {
+	_lines=$(cat DESC | wc -l)
+	tail -n $(($_lines-2)) DESC
+}
+
+function test_extentions() {
+	_file="$1"
+	if [[ $(cat $_file | grep "//.*IGNORE" -c) != "0" ]]; then
+		echo -e "$txtylw IGNORE $txtrst"
+		return 1
+	else
+		_extentions=$(cat $_file | grep -E "//.*EXT" | sed -re "s/\/\/.*EXT: *(!?[A-Z]{3,4}).*/\1/")
+		for ext in $_extentions; do
+			if [[ $ext =~ \!(.*) ]]; then
+				#Negative extention
+				negative=1
+				mext=${BASH_REMATCH[1]}
+			else
+				negative=0
+				mext=$ext
+			fi
+			count=$(echo "$extentions" | grep $mext -cx)
+			if [[ ( $count == "0" && $negative == 0 ) || ( $count != "0" && $negative == 1 ) ]]; then
+				echo -e "$txtylw EXT MISS: $ext $txtrst"
+				return 1
+			fi
+		done
+		return 0
+	fi
+}
+
+compile_ok_count=0
+compile_ok_errors=0
+# Expect compilation of $1 to succed
+function compile_ok() {
+	_file=$1
+	echo -ne "Compiling: $_file \t\t"
+	test_extentions $_file
+	if [ $? -eq 0 ]; then
+		_res=$(compile $_file)
+		ex=$?
+		let compile_ok_count+=1
+		if [ $ex -eq 0 ]; then
+			echo -e "$txtgrn OK $txtrst"
+			return 0
+		else
+			let compile_ok_errors+=1
+			echo -e "$txtred ERROR $txtrst"
+			echo "Compiler output: return status $ex"
+			echo -e "$_res\n"
+			return 1
+		fi
+	else
+		return 0
+	fi
+}
+
+compile_fail_count=0
+compile_fail_errors=0
+#Expect compilation of $1 to fail
+function compile_fail() {
+	_file=$1
+	echo -ne "Compiling: $_file \t\t"
+	test_extentions $_file
+	if [ $? -eq 0 ]; then
+		_res=$(compile $_file)
+		ex=$?
+		let compile_fail_count+=1
+		if [ $ex -ne 0 ]; then
+			echo -e "$txtgrn OK $txtrst"
+			return 0
+		else
+			let compile_fail_errors+=1
+			echo -e "$txtred ERROR $txtrst"
+			return 1
+		fi
+	else
+		return 0
+	fi
+}
+
+assemble_count=0
+assemble_errors=0
+
+function assemble() {
+	_file=$1
+	_dirname=$(mkdirname $_file)
+	out="$output_dir/$_dirname/bin" 
+	mkdir -p "$out"
+	echo -en "Assembling: $_file \t\t"
+	test_extentions $_file
+	
+	if [ $? -eq 0 ]; then
+		_res=$($jasmin -d "$out" $output_dir/$_dirname/*.j 2>&1)
+		let assemble_count+=1
+		if [ $? -eq 0 ]; then
+			echo -e "$txtgrn OK $txtrst"
+			return 0
+		else
+			let assemble_errors+=1
+			echo -e "$txtred ERROR $txtrst"
+			echo "Jasmin output: "
+			echo -e "$_res\n"
+			return 1
+		fi
+	else
+		return 0
+	fi
+}
+
+function find_main_class() {
+	cat $1 | grep "class " -m 1 | sed -r 's/class[ \t]+([a-zA-Z_][a-zA-Z0-9_]*)([ {].*)?/\1/'
+}
+
+function generate_output_file() {
+	_file=$1
+	_java_file="$_file.java"
+	_dirname=$(mkdirname $_java_file)
+	_out="$output_dir/$_dirname/javac_bin" 
+	mkdir -p $_out
+	_javac_out=`$javac -d "$_out" $_java_file 2>&1`
+	if [ $? -eq 0 ]; then
+		# Run the created program!
+		java -cp $_out $(find_main_class $_java_file) > "$_file.output" 2> "$_out/error.log"
+		if [ $? -eq 0 ]; then 
+			return 0
+		else
+			echo "The executed command was:" >> "$_out/error.log"
+			echo "java -cp $_out $(find_main_class $_java_file)" >> "$_out/error.log" 
+			rm "$_file.output"
+			return 2
+		fi
+	else
+		echo "$javac -d \"$_out\" $_java_file 2>&1" > "$_out/error.log"
+		echo $_javac_out >> "$_out/error.log"
+		return 1;
+	fi
+}
+
+# Make sure file.output exists (or return 1)
+function get_output() {
+	_file=$(echo "$1" | sed 's/\.java//g')
+	echo "$_file.output"
+	if [ -f "$_file.output" ]; then
+		return 0
+	else
+		# We must generate it!
+		generate_output_file $_file
+		ex=$?
+		if [ $ex -eq 0 ]; then
+			return 0
+		else
+			return $ex # Generation failed
+		fi
+	fi
+}
+
+execute_count=0
+execute_errors=0
+
+function execute_test() {
+	_file=$1
+	_dirname=$(mkdirname $_file)
+	_out="$output_dir/$_dirname/bin" 
+
+	echo -en "Executing: $_file \t\t"
+	test_extentions $_file
+	
+	if [ $? -eq 0 ]; then
+		_outfile=$(get_output $_file)
+		ex=$?
+		let execute_count+=1
+		if [ $ex -eq 0 ]; then
+			_program_outfile="$output_dir/$_dirname/program.output"
+			_program_errfile="$output_dir/$_dirname/program.err"
+			java -cp $_out $(find_main_class $_file) > "$_program_outfile" 2>"$_program_errfile"
+			ex=$?
+			if [ $ex -eq 0 ]; then
+				_diff_file="$output_dir/$_dirname/output.diff"
+				echo "Diff (program output< >expected output):" > "$_diff_file"
+				diff -a -y --suppress-common-lines "$_program_outfile" "$_outfile" >> "$_diff_file"
+
+				if [ $? -eq 0 ]; then 
+					echo -e "$txtgrn OK $txtrst"
+					rm "$_diff_file"
+					return 0
+				else
+					let execute_errors+=1
+					echo -e "$txtred ERROR $txtrst"
+					echo "Diff output to $_diff_file"
+					return 1
+				fi
+			else
+				let execute_errors+=1
+				echo -e "$txtred JVM ERROR $txtrst"
+				echo java -cp $_out $(find_main_class $_file) "> \"$_program_outfile\" 2>\"$_program_errfile\""
+				cat "$_program_errfile"
+				return 1
+			fi
+		else
+			_javac_dir="$output_dir/$_dirname/javac_bin" 
+
+			if [ $ex -eq 1 ]; then
+				echo -e "$txtred COMPILE ERROR $txtrst"
+				echo "Couldn't compile the program with javac:"
+			else
+				echo -e "$txtred RUN ERROR $txtrst"
+				echo "Couldn't run the program that was compiled with javac:"
+			fi
+			cat "$_javac_dir/error.log"
+		fi
+	else
+		return 0
+	fi
+}
+
+## BEGIN EXECUTION
+
+extentions=$(extention_list)
+
+# Set no_exec to 1 in shell to be able to source this file without shit executing!
+if [[ $no_exec != "1" ]]; then
+
+build_mjc
+
+if [ $? -ne 0 ]; then
+	exit 1
+fi
+
+rm -rf $output_dir
+mkdir $output_dir
+
+compile_files=$(ls $compile_tests $execute_tests $nonexecute_tests)
+noncompile_files=$(ls $noncompile_tests)
+assembly_files=$(ls $execute_tests $nonexecute_tests $compile_tests)
+execute_files=$(ls $execute_tests)
+# Run single test
+if [ $# -eq 1 ]; then
+	compile_files=""
+	noncompile_files=""
+	assembly_files=""
+	execute_files=""
+	if [[ $(echo $1 | grep "noncompile" -c ) == "1" ]]; then
+		noncompile_files="$1"
+	elif [[ $(echo $1 | grep "compile" -c ) == "1" ]]; then
+		compile_files="$1"
+		assembly_files="$1"
+	elif [[ $(echo $1 | grep "execute" -c ) == "1" ]]; then
+		compile_files="$1"
+		assembly_files="$1"
+		execute_files="$1"
+	fi
+fi
+
+# Start by compiling everything that should be compiled
+echo "Compiling code"
+echo "=============="
+for file in $compile_files; do
+	compile_ok $file
+done
+
+echo
+
+if [ $compile_ok_errors -ne 0 ]; then
+	echo "$compile_ok_errors/$compile_ok_count compile tests failed. Not continuing."
+	exit 1
+fi
+
+echo "Compiling code that should fail"
+echo "==============================="
+
+for file in $noncompile_files; do
+	compile_fail $file
+done
+
+echo
+
+if [ $compile_fail_errors -ne 0 ]; then
+	echo "$compile_fail_errors/$compile_fail_count noncompile tests failed. Not continuing."
+	exit 1
+fi
+
+echo "Assembling"
+echo "=========="
+
+for file in $assembly_files; do
+	assemble $file
+done
+
+echo
+
+if [ $assembly_errors -ne 0 ]; then
+	echo "$assembly_errors/$assembly_count assembly tests failed. Not continuing."
+	exit 1
+fi
+
+echo "Running execution test"
+echo "======================"
+for file in $execute_files; do
+	execute_test $file
+done
+
+echo
+
+if [ $execution_errors -ne 0 ]; then
+	echo "$execution_errors/$execution_count execution tests failed. Not continuing."
+	exit 1
+fi
+
+echo            "==================="
+
+echo -e "$txtgrn All tests completed $txtrst"
+
+fi

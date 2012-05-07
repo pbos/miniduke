@@ -19,6 +19,8 @@ symtab_var *symtab_init_vars(ast_vardecl *decl, symtab_parent parent)
 
 	var->parent = parent;
 
+	decl->bind = var;
+
 	return var;
 }
 
@@ -61,6 +63,8 @@ symtab_class *symtab_init_classes(ast_classdecl *class)
 	symclass->methods = symtab_init_methods(class->methods, symclass);
 
 	symclass->next = symtab_init_classes(class->next);
+
+	class->bind = symclass;
 
 	return symclass;
 }

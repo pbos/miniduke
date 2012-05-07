@@ -4,6 +4,7 @@
 #include "minijava.tab.h"
 #include "symtab.h"
 #include "typecheck.h"
+#include "ast_bind.h"
 
 void md_error(int lineno, const char *error, ...);
 

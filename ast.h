@@ -95,11 +95,15 @@ typedef struct ast_stmt {
 	struct ast_stmt *next; // Non-NULL => StmtList
 } ast_stmt;
 
+struct symtab_var;
+
 typedef struct ast_vardecl {
 	int lineno;
 	ast_type type;
 
 	const char *id;
+
+	struct symtab_var *bind;
 
 	struct ast_vardecl *next; // Non-NULL => VarList
 } ast_vardecl;
@@ -121,6 +125,8 @@ typedef struct ast_classdecl {
 
 	ast_vardecl *fields;
 	ast_methoddecl *methods;
+
+	struct symtab_class *bind;
 
 	struct ast_classdecl *next; // ClassList
 } ast_classdecl;

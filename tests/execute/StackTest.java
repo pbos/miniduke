@@ -12,11 +12,9 @@ class StackTest {
 			i = i + 1;
 		}
 
-		i = 0;
-		while(i < 100)
+		while(!s.isEmpty())
 		{
 			System.out.println(s.pop());
-			i = i + 1;
 		}
 	}
 }
@@ -39,5 +37,8 @@ class Stack {
 	{
 		used = used - 1;
 		return space[used];
+	}
+	public boolean isEmpty(){
+		return used < 1;
 	}
 }

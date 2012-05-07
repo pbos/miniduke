@@ -153,6 +153,7 @@ function compile_fail() {
 		else
 			let compile_fail_errors+=1
 			echo -e "$txtred ERROR $txtrst"
+			cat $_file
 			return 1
 		fi
 	else

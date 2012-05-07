@@ -14,21 +14,20 @@ class SAFF
 		int i;
 		int tmp;
 		i = 2;
-		while(i < term && -1 < i)
+		while(i < term && 0 < i)
 		{
-			tmp = slowdiv(term, i);
+			tmp = this.slowdiv(term, i);
 
-			if(!(tmp * i < term))
-			{
-				this.factor(i);
-				this.factor(tmp);
-				i = -2; // break;
+			if(!(tmp * i < term)) {
+				i = this.factor(i);
+				i = this.factor(tmp);
+				i = 0-1; // break;
 			}
 			else
 			{}
 			i = i + 1;
 		}
-		if(-1 < i)
+		if(0 < i)
 		{
 			System.out.println(term);
 		}

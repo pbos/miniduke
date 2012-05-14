@@ -4,6 +4,14 @@
 
 #include <string.h>
 
+void typecheck_assign_class(symtab_var *var)
+{
+	if(var->type.type != VAR_CLASS)
+		return;
+
+	var->type.class = symtab_find_class(var->lineno, var->type.classname);
+}
+
 void typecheck_varlist(symtab_var *varlist, symtab_var *var)
 {
 	while(varlist != NULL)
@@ -25,10 +33,15 @@ void typecheck_method(symtab_method *method)
 
 	symtab_var *var;
 	for(var = method->params; var != NULL; var = var->next)
+	{
+		typecheck_assign_class(var);
 		typecheck_varlist(method->params, var);
+	}
 
 	for(var = method->locals; var != NULL; var = var->next)
 	{
+		typecheck_assign_class(var);
+
 		symtab_var *param;
 		for(param = method->params; param != NULL; param = param->next)
 		{
@@ -41,7 +54,7 @@ void typecheck_method(symtab_method *method)
 
 void typecheck_classes(symtab_class *class)
 {
-	if(!strcmp(class->id, md_symtab.main_class))
+	if(!strcmp(class->id, md_symtab.main_class.id))
 		md_error(class->lineno, "duplicate class: %s defined on line %d.", class->id, class->lineno);
 
 	symtab_class *classlist;
@@ -55,16 +68,26 @@ void typecheck_classes(symtab_class *class)
 	symtab_method *method;
 	for(method = class->methods; method != NULL; method = method->next)
 		typecheck_method(method);
+
+	symtab_var *var;
+	for(var = class->fields; var != NULL; var = var->next)
+	{
+		typecheck_assign_class(var);
+		typecheck_varlist(class->fields, var);
+	}
+
 }
 
 void typecheck_symtab()
 {
 	symtab_var *var;
-	for(var = md_symtab.main_method->locals; var != NULL; var = var->next)
+
+	for(var = md_symtab.main_class.methods->locals; var != NULL; var = var->next)
 	{
-		if(!strcmp(md_symtab.main_method->params->id, var->id))
-			md_error(md_symtab.main_method->params->lineno, "'%s' is already defined on line %d", var->id, var->lineno);
-		typecheck_varlist(md_symtab.main_method->locals, var);
+		if(!strcmp(md_symtab.main_class.methods->params->id, var->id))
+			md_error(md_symtab.main_class.methods->params->lineno, "'%s' is already defined on line %d", var->id, var->lineno);
+		typecheck_assign_class(var);
+		typecheck_varlist(md_symtab.main_class.methods->locals, var);
 	}
 
 	symtab_class *class;

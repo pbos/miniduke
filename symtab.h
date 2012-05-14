@@ -6,6 +6,8 @@
 struct symtab_class;
 struct symtab_method;
 
+// field => sym_class as parent
+// param/vars => sym_method as parent
 typedef struct
 {
 	enum {
@@ -43,6 +45,7 @@ typedef struct symtab_method {
 } symtab_method;
 
 typedef struct symtab_class {
+	ast_type type;
 	int lineno;
 	const char *id;
 	symtab_var *fields;
@@ -53,15 +56,16 @@ typedef struct symtab_class {
 
 typedef struct
 {
-	int main_lineno;
-	const char *main_class;
-	symtab_method *main_method;
+	symtab_class main_class;
 
 	symtab_class *classes;
 } symtab_program;
 
 void symtab_init();
 void symtab_print(FILE *file);
+
+symtab_class *symtab_find_class(int lineno, const char *id);
+symtab_var *symtab_find_var(int lineno, ast_methoddecl *ast_method, const char *id);
 
 #endif
 

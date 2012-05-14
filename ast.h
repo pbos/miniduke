@@ -5,6 +5,10 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+struct symtab_var;
+struct symtab_class;
+struct symtab_method;
+
 typedef enum {
 	VAR_UNKNOWN = 0, // default should flip out
 	VAR_VOID,
@@ -15,11 +19,9 @@ typedef enum {
 	VAR_CLASS
 } ast_var_type;
 
-struct symtab_class;
-
 typedef struct {
 	ast_var_type type;
-	char *classname; // Used by VAR_CLASS
+	const char *classname; // Used by VAR_CLASS
 	struct symtab_class *class; // Used by VAR_CLASS during typecheck
 } ast_type;
 
@@ -44,12 +46,17 @@ typedef struct ast_expr {
 	union {
 		int32_t int_const; // INT_CONST
 		bool bool_const; // BOOL_CONST
-		const char *id; // VARNAME, NEW_CLASS
+		struct {
+			const char *id; // VARNAME, NEW_CLASS
+			struct symtab_var *bind_var;
+			struct symtab_class *bind_class;
+		};
 		struct ast_expr *expr; // NOT_EXPR / NEW_INT_ARRAY / ARRAY_LENGTH
 		struct { // METHOD_CALL
 			struct ast_expr *object;
-			char *method;
+			const char *method;
 			struct ast_expr *exp_list;
+			struct symtab_method *bind_method;
 		};
 		struct { // BINOP
 			struct ast_expr *lhs, *rhs;
@@ -87,15 +94,15 @@ typedef struct ast_stmt {
 		};
 		struct { // VAR_ASSIGN / ARRAY_ASSIGN
 			const char *id;
-			ast_expr *assign_expr; // VAR_ASSIGN / ARRAY_ASSIGN
+			struct symtab_var *bind;
 			ast_expr *array_index; // ARRAY_ASSIGN
+			ast_expr *assign_expr; // VAR_ASSIGN / ARRAY_ASSIGN
 		};
 		struct ast_expr *expr; // SYSO
 	};
 	struct ast_stmt *next; // Non-NULL => StmtList
 } ast_stmt;
 
-struct symtab_var;
 
 typedef struct ast_vardecl {
 	int lineno;
@@ -116,6 +123,9 @@ typedef struct ast_methoddecl {
 	ast_vardecl *var_decl;
 	ast_stmt *body;
 	ast_expr *return_expr;
+
+	struct symtab_method *bind;
+
 	struct ast_methoddecl *next; // MethodList
 } ast_methoddecl;
 
@@ -172,6 +182,8 @@ void ast_method_print(FILE *file, int indent_level, ast_methoddecl *method);
 void ast_class_print(FILE *file, int indent_level, ast_classdecl *class);
 void ast_main_print(FILE *file, int indent_level, ast_mainclass *main_class);
 void ast_program_print(FILE *file, int indent_level, ast_program *program);
+const char *ast_type_str(ast_type type);
+
 
 #endif
 

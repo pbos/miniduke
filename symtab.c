@@ -2,6 +2,7 @@
 
 #include "miniduke.h"
 #include <stdlib.h>
+#include <string.h>
 
 extern void print_indent(FILE *file, int indent_level);
 
@@ -43,6 +44,7 @@ symtab_method *symtab_init_methods(ast_methoddecl *methods, symtab_class *parent
 
 	method->id = methods->id;
 	method->type = methods->type;
+	methods->bind = method;
 
 	return method;
 }
@@ -66,22 +68,30 @@ symtab_class *symtab_init_classes(ast_classdecl *class)
 
 	class->bind = symclass;
 
+	symclass->type.type = VAR_CLASS;
+	symclass->type.class = symclass;
+	symclass->type.classname = class->id;
+
 	return symclass;
 }
 
 void symtab_init()
 {
 	// Read main class
-	md_symtab.main_class = md_ast.main_class.id;
+	md_symtab.main_class.type.type = VAR_CLASS;
+	md_symtab.main_class.type.classname = md_ast.main_class.id;
+	md_symtab.main_class.type.class = &md_symtab.main_class;
+	md_symtab.main_class.lineno = md_ast.main_class.lineno;
+
+	md_symtab.main_class.id = md_ast.main_class.id;
+	md_symtab.main_class.next = NULL;
 
 	// Read main method
-	md_symtab.main_method = symtab_init_methods(md_ast.main_class.method, NULL);
+	md_symtab.main_class.methods = symtab_init_methods(md_ast.main_class.method, &md_symtab.main_class);
 
 	// Parse other classes
 	md_symtab.classes = symtab_init_classes(md_ast.class_list);
 }
-
-extern const char *ast_type_str(ast_type type);
 
 void symtab_print_vars(FILE *file, int indent, symtab_var *vars)
 {
@@ -115,34 +125,80 @@ void symtab_print_methods(FILE *file, int indent, symtab_method *methods)
 	symtab_print_methods(file, indent, methods->next);
 }
 
-void symtab_print_classes(FILE *file, symtab_class *class)
+void symtab_print_classes(FILE *file, int indent, symtab_class *class)
 {
 	if(class == NULL)
 		return;
 
-	print_indent(file, 1);
+	print_indent(file, indent);
 	fprintf(file, "%s:\n", class->id);
 
-	print_indent(file, 2);
+	print_indent(file, indent+1);
 	fputs("fields:\n", file);
-	symtab_print_vars(file, 3, class->fields);
+	symtab_print_vars(file, indent+2, class->fields);
 	fputs("\n", file);
 
-	print_indent(file, 2);
+	print_indent(file, indent+1);
 	fputs("methods:\n", file);
-	symtab_print_methods(file, 3, class->methods);
+	symtab_print_methods(file, indent+2, class->methods);
 	fputs("\n", file);
 
-	symtab_print_classes(file, class->next);
+	symtab_print_classes(file, indent, class->next);
 }
 
 void symtab_print(FILE *file)
 {
-	fprintf(file, "%s:\n", md_symtab.main_class);
-	symtab_print_methods(file, 1, md_symtab.main_method);
+	symtab_print_classes(file, 0, &md_symtab.main_class);
 
 	fputs("classes:\n", file);
 
-	symtab_print_classes(file, md_symtab.classes);
+	symtab_print_classes(file, 1, md_symtab.classes);
+}
+
+symtab_class *symtab_find_class(int lineno, const char *id)
+{
+	if(!strcmp(md_symtab.main_class.id, id))
+		return &md_symtab.main_class;
+
+	symtab_class *class;
+	for(class = md_symtab.classes; class != NULL; class = class->next)
+	{
+		if(!strcmp(id, class->id))
+			return class;
+	}
+
+	md_error(lineno, "cannot find class '%s'.", id);
+	return NULL;
+}
+
+symtab_var *symtab_find_var(int lineno, ast_methoddecl *ast_method, const char *id)
+{
+	symtab_method *method = ast_method->bind;
+
+	symtab_var *var;
+	// Find local variables
+	for(var = method->locals; var != NULL; var = var->next)
+	{
+		if(!strcmp(id, var->id))
+			return var;
+	}
+
+	// Find method parameters
+	for(var = method->params; var != NULL; var = var->next)
+	{
+		if(!strcmp(id, var->id))
+			return var;
+	}
+
+	// Find fields
+	for(var = method->class->fields; var != NULL; var = var->next)
+	{
+		if(!strcmp(id, var->id))
+			return var;
+	}
+
+	md_error(lineno, "cannot find symbol '%s'.", id);
+
+	return NULL;
 }
 

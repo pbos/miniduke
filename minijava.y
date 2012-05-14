@@ -108,9 +108,10 @@ MainClass: CLASS id LBLOCK PUBLIC STATIC VOID id LPAREN STRING LBRACK RBRACK id 
 
 		// main method
 		ast_methoddecl *main_method = calloc(1, sizeof(ast_methoddecl));
+		main_method->lineno = yylineno;
 		main_method->params = main_params;
 		main_method->type.type = VAR_VOID;
-		main_method->id = "main";
+		main_method->id = $7;
 		main_method->var_decl = $15;
 		main_method->body = $16;
 
@@ -220,11 +221,11 @@ Exp: Exp Op Exp {
 	| Exp LBRACK Exp RBRACK {
 		AST_EXPR(exp, ARRAY_INDEX, array = $1)
 		exp->array_index = $3;
-		$$ = $1;
+		$$ = exp;
 	}
 	| Exp PERIOD LENGTH {
 		AST_EXPR(exp, ARRAY_LENGTH, expr = $1)
-		$$ = $1;
+		$$ = exp;
 	}
 	| Exp PERIOD id LPAREN ExpList RPAREN {
 		AST_EXPR_EMPTY(exp, METHOD_CALL)
@@ -242,7 +243,7 @@ Exp: Exp Op Exp {
 			md_error(yylineno, "integer number too large: %s", $1);
 		}
 		free($1);
-		$$=exp;
+		$$ = exp;
 	}
 	| TRUE {
 		AST_EXPR(exp, BOOL_CONST, bool_const = true)
@@ -281,7 +282,7 @@ NewIntArray: NEW INT LBRACK Exp RBRACK Multidim {
 Multidim: LBRACK Exp RBRACK Multidim { $$ = (ast_expr *) 1; } // Non-NULL => error
 	| /* empty */ { $$ = NULL; }
 
-Op: CONJ { $$=CONJ; }
+Op: CONJ { $$ = CONJ; }
 	| LESS { $$ = LESS; }
 	| PLUS { $$ = PLUS;}
 	| MINUS { $$ = MINUS; }

@@ -8,7 +8,7 @@
 
 extern int yyparse();
 
-const char *filename = NULL;
+char *filename = NULL;
 
 ast_program md_ast;
 symtab_program md_symtab;
@@ -59,15 +59,27 @@ void parse_args(int argc, char *argv[])
 	}
 }
 
-const char *basename(const char *foo)
+char *basename(char *foo)
 {
-	const char *out = foo;
+	char *out = foo;
 	while(*foo != '\0')
 	{
 		if(*foo == '/' && foo[1] != '\0')
 			out = foo+1;
 		++foo;
 	}
+	--foo;
+
+	while(foo > out)
+	{
+		if(*foo == '.')
+		{
+			*foo = '\0';
+			break;
+		}
+		--foo;
+	}
+
 	return out;
 }
 
@@ -91,9 +103,9 @@ int main(int argc, char *argv[])
 	if(out_dir != NULL)
 		chdir(out_dir);
 
-	// discard directory path etc.
+	// discard directory path and ".java" part
 	filename = basename(filename);
-	char out_filename[strlen(md_ast.main_class.id) + strlen(".syntax") + 1];
+	char out_filename[strlen(filename) + 16]; // +16 should be enough for all sane file endings
 	sprintf(out_filename, "%s.syntax", filename);
 
 	FILE *out_file = fopen(out_filename, "w");

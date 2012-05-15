@@ -76,7 +76,7 @@
 %token <id> id
 %token <id> int_lit
 
-%type <token> Op
+/*%type <token> Op*/
 %type <expr> Exp ExpList ExpRest ExpRestList NewIntArray Multidim
 %type <stmt> Stmt StmtList
 %type <decl> VarDecl VarList FormalList FormalRest
@@ -211,10 +211,38 @@ Stmt: LBLOCK StmtList RBLOCK {
 		stmt->assign_expr = $6;
 		$$ = stmt;
 	}
-Exp: Exp Op Exp {
+Exp: Exp CONJ Exp {
 		AST_EXPR_EMPTY(exp, BINOP)
 		exp->lhs = $1;
-		exp->oper = $2;
+		exp->oper = CONJ;
+		exp->rhs = $3;
+		$$ = exp;
+	}
+	| Exp LESS Exp {
+		AST_EXPR_EMPTY(exp, BINOP)
+		exp->lhs = $1;
+		exp->oper = LESS;
+		exp->rhs = $3;
+		$$ = exp;
+	}
+	| Exp PLUS Exp {
+		AST_EXPR_EMPTY(exp, BINOP)
+		exp->lhs = $1;
+		exp->oper = PLUS;
+		exp->rhs = $3;
+		$$ = exp;
+	}
+	| Exp MINUS Exp {
+		AST_EXPR_EMPTY(exp, BINOP)
+		exp->lhs = $1;
+		exp->oper = MINUS;
+		exp->rhs = $3;
+		$$ = exp;
+	}
+	| Exp MULT Exp {
+		AST_EXPR_EMPTY(exp, BINOP)
+		exp->lhs = $1;
+		exp->oper = MULT;
 		exp->rhs = $3;
 		$$ = exp;
 	}
@@ -281,12 +309,13 @@ NewIntArray: NEW INT LBRACK Exp RBRACK Multidim {
 
 Multidim: LBRACK Exp RBRACK Multidim { $$ = (ast_expr *) 1; } // Non-NULL => error
 	| /* empty */ { $$ = NULL; }
-
+/*
 Op: CONJ { $$ = CONJ; }
 	| LESS { $$ = LESS; }
 	| PLUS { $$ = PLUS;}
 	| MINUS { $$ = MINUS; }
 	| MULT { $$ = MULT; }
+*/
 
 ExpList: Exp ExpRestList {
 		$$ = $1;

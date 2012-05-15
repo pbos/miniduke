@@ -4,6 +4,16 @@
 
 #include <string.h>
 
+void typecheck_assign_methods(symtab_method *var)
+{
+	if(var == NULL)
+		return;
+	if(var->type.type == VAR_CLASS)
+		var->type.class = symtab_find_class(var->lineno, var->type.classname);
+	
+	typecheck_assign_methods(var->next);
+}
+
 void typecheck_assign_class(symtab_var *var)
 {
 	if(var->type.type != VAR_CLASS)
@@ -75,7 +85,6 @@ void typecheck_classes(symtab_class *class)
 		typecheck_assign_class(var);
 		typecheck_varlist(class->fields, var);
 	}
-
 }
 
 void typecheck_symtab()
@@ -92,6 +101,9 @@ void typecheck_symtab()
 
 	symtab_class *class;
 	for(class = md_symtab.classes; class != NULL; class = class->next)
+	{
 		typecheck_classes(class);
+		typecheck_assign_methods(class->methods);
+	}
 }
 

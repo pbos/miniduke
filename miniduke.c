@@ -59,6 +59,18 @@ void parse_args(int argc, char *argv[])
 	}
 }
 
+const char *basename(const char *foo)
+{
+	const char *out = foo;
+	while(*foo != '\0')
+	{
+		if(*foo == '/' && foo[1] != '\0')
+			out = foo+1;
+		++foo;
+	}
+	return out;
+}
+
 int main(int argc, char *argv[])
 {
 	parse_args(argc, argv);
@@ -79,16 +91,19 @@ int main(int argc, char *argv[])
 	if(out_dir != NULL)
 		chdir(out_dir);
 
-	char ast_filename[strlen(md_ast.main_class.id) + strlen(".syntax") + 1];
-	sprintf(ast_filename, "%s.syntax", md_ast.main_class.id);
+	// discard directory path etc.
+	filename = basename(filename);
+	char out_filename[strlen(md_ast.main_class.id) + strlen(".syntax") + 1];
+	sprintf(out_filename, "%s.syntax", filename);
 
-	FILE *ast_file = fopen(ast_filename, "w");
-	if(ast_file)
+	FILE *out_file = fopen(out_filename, "w");
+	if(out_file)
 	{
-		ast_program_print(ast_file, 0, &md_ast);
+		ast_program_print(out_file, 0, &md_ast);
+		fclose(out_file);
 	}
 	else
-		fprintf(stderr, "warning: couldn't open AST file '%s' for writing.\n", ast_filename);
+		fprintf(stderr, "warning: couldn't open AST file '%s' for writing.\n", out_filename);
 
 	symtab_init();
 
@@ -96,7 +111,16 @@ int main(int argc, char *argv[])
 
 	ast_bind();
 
-	symtab_print(stdout);
+	sprintf(out_filename, "%s.symtab", filename);
+
+	out_file = fopen(out_filename, "w");
+	if(out_file)
+	{
+		symtab_print(out_file);
+		fclose(out_file);
+	}
+	else
+		fprintf(stderr, "warning: couldn't open symtab file '%s' for writing.\n", out_filename);
 
 	return 0;
 }

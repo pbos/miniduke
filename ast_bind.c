@@ -87,6 +87,7 @@ void ast_bind_expressions(ast_methoddecl *method, ast_expr *expr)
 			ast_bind_expressions(method, expr->expr);
 			if(expr->expr->expr_type.type != VAR_INT)
 				md_error(expr->lineno, "new int[], found '%s', expected 'int'.", ast_type_str(expr->expr->expr_type));
+			expr->expr_type.type = VAR_INT_ARRAY;
 			break;
 		case ARRAY_LENGTH:
 			ast_bind_expressions(method, expr->expr);
@@ -119,9 +120,6 @@ void ast_bind_expressions(ast_methoddecl *method, ast_expr *expr)
 				{
 					case CONJ: // &&
 						expr->expr_type.type = VAR_BOOL;
-						printf("conj (%d)\n", expr->lineno);
-						ast_expr_print(stdout, 1, expr->lhs);
-						ast_expr_print(stdout, 1, expr->rhs);
 
 						tmp_type.type = VAR_BOOL;
 						ast_bind_typecheck(expr->lhs->lineno, tmp_type, expr->lhs->expr_type);
@@ -194,13 +192,25 @@ void ast_bind_statements(ast_methoddecl *method, ast_stmt *stmt)
 				md_error(stmt->expr->lineno, "System.out.println() cannot be used with '%s'.", ast_type_str(stmt->cond->expr_type));
 			break;
 		case VAR_ASSIGN:
-			// TODO: Look up id, bind variable, check types
+			stmt->bind = symtab_find_var(stmt->lineno, method, stmt->id);
 			ast_bind_expressions(method, stmt->assign_expr);
+			ast_bind_typecheck(stmt->lineno, stmt->assign_expr->expr_type, stmt->bind->type);
 			break;
 		case ARRAY_ASSIGN:
-			// TODO: Look up id, bind variable, check types
-			ast_bind_expressions(method, stmt->assign_expr);
-			ast_bind_expressions(method, stmt->array_index);
+			{
+				stmt->bind = symtab_find_var(stmt->lineno, method, stmt->id);
+				ast_bind_expressions(method, stmt->assign_expr);
+				ast_bind_expressions(method, stmt->array_index);
+
+				ast_type expected;
+				expected.type = VAR_INT_ARRAY;
+
+				ast_bind_typecheck(stmt->bind->lineno, stmt->bind->type, expected);
+
+				expected.type = VAR_INT;
+				ast_bind_typecheck(stmt->array_index->lineno, stmt->array_index->expr_type, expected);
+				ast_bind_typecheck(stmt->assign_expr->lineno, stmt->assign_expr->expr_type, expected);
+			}
 			break;
 	}
 

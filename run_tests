@@ -371,8 +371,8 @@ done
 
 echo
 
-if [ $assembly_errors -ne 0 ]; then
-	echo "$assembly_errors/$assembly_count assembly tests failed. Not continuing."
+if [ $assemble_errors -ne 0 ]; then
+	echo "$assemble_errors/$assemble_count assembly tests failed. Not continuing."
 	exit 1
 fi
 

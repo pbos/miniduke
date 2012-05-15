@@ -6,6 +6,8 @@
 #include <string.h>
 #include <unistd.h> //chdir for -o
 
+#include "jasmin.h"
+
 extern int yyparse();
 
 char *filename = NULL;
@@ -133,6 +135,8 @@ int main(int argc, char *argv[])
 	}
 	else
 		fprintf(stderr, "warning: couldn't open symtab file '%s' for writing.\n", out_filename);
+
+	jasmin_out();
 
 	return 0;
 }

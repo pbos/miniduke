@@ -2,6 +2,8 @@
 
 #include "miniduke.h"
 
+#include <string.h>
+
 int indent = 0;
 FILE *jasmin_file;
 int jasmin_in_main = 0;
@@ -283,7 +285,7 @@ void jasmin_locals(ast_methoddecl *method)
 
 void jasmin_stacksize(ast_methoddecl *method)
 {
-	jasmin_println(".limit stack ?");
+	jasmin_println(".limit stack 4711");
 }
 
 void jasmin_method_body(ast_methoddecl *method)
@@ -332,7 +334,12 @@ void jasmin_methods(ast_methoddecl *method)
 
 void jasmin_mainclass()
 {
-	jasmin_file = stderr;
+	char filename[strlen(md_ast.main_class.id) + strlen(".j") + 1];
+	sprintf(filename, "%s.j", md_ast.main_class.id);
+	jasmin_file = fopen(filename, "w");
+
+	if(jasmin_file == NULL)
+		md_error(-1, "couldn't open file '%s' for writing.", filename);
 
 	jasmin_println(".source %s.j", md_ast.main_class.id);
 	jasmin_println(".class %s", md_ast.main_class.id);
@@ -351,7 +358,7 @@ void jasmin_mainclass()
 		jasmin_in_main = 0;
 	jasmin_println(".end method");
 
-	//fclose();
+	fclose(jasmin_file);
 }
 
 void jasmin_classes(ast_classdecl *class)
@@ -359,9 +366,12 @@ void jasmin_classes(ast_classdecl *class)
 	if(class == NULL)
 		return;
 
-	jasmin_file = stderr;
+	char filename[strlen(class->id) + strlen(".j") + 1];
+	sprintf(filename, "%s.j", class->id);
+	jasmin_file = fopen(filename, "w");
 
-	jasmin_println(" ---"); //tmp
+	if(jasmin_file == NULL)
+		md_error(-1, "couldn't open file '%s' for writing.", filename);
 
 	label_count = 0;
 
@@ -378,7 +388,7 @@ void jasmin_classes(ast_classdecl *class)
 
 	jasmin_methods(class->methods);
 
-	//fclose();
+	fclose(jasmin_file);
 
 	jasmin_classes(class->next);
 }

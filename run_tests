@@ -12,10 +12,10 @@ jasmin="java -jar jasmin.jar"
 build="make"
 #build="ant"
 
-compile_tests="testcases/compile/*/*.java tests/compile/*.java"
-noncompile_tests="testcases/noncompile/*/*.java tests/noncompile/*.java"
-execute_tests="testcases/execute/*/*.java tests/execute/*.java"
-nonexecute_tests="testcases/nonexecute/*/*.java"
+compile_tests="student-tests-2012/compile/*/*.java testcases/compile/*/*.java tests/compile/*.java"
+noncompile_tests="student-tests-2012/noncompile/*/*.java testcases/noncompile/*/*.java tests/noncompile/*.java"
+execute_tests="student-tests-2012/execute/*/*.java testcases/execute/*/*.java tests/execute/*.java"
+nonexecute_tests="student-tests-2012/nonexecute/*/*.java testcases/nonexecute/*/*.java"
 
 ###### COLORS
 txtblk='\e[0;30m' # Black - Regular
@@ -384,8 +384,8 @@ done
 
 echo
 
-if [ $execution_errors -ne 0 ]; then
-	echo "$execution_errors/$execution_count execution tests failed. Not continuing."
+if [ $execute_errors -ne 0 ]; then
+	echo "$execute_errors/$execution_count execution tests failed. Not continuing."
 	exit 1
 fi
 

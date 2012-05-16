@@ -71,6 +71,8 @@ void ast_bind_expressions(ast_methoddecl *method, ast_expr *expr)
 			expr->expr_type = expr->bind_var->type;
 			break;
 		case THIS_PTR:
+			if(method->bind->class == &md_symtab.main_class)
+				md_error(expr->lineno, "'this' cannot be used from the static main method.");
 			expr->expr_type = method->bind->class->type;
 			break;
 		case NOT_EXPR:

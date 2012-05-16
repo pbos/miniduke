@@ -61,18 +61,28 @@ void jasmin_expr(ast_expr *expr)
 			break;
 		case VARNAME:
 		{
-			switch(expr->bind_var->type.type)
+			if(expr->bind_var->parent.type == SYM_CLASS)
 			{
-				case VAR_INT:
-				case VAR_BOOL:
-					jasmin_println("iload %d ; load %s", expr->bind_var->var_reg, expr->bind_var->id);
-					break;
-				case VAR_INT_ARRAY:
-				case VAR_CLASS:
-					jasmin_println("aload %d ; load %s", expr->bind_var->var_reg, expr->bind_var->id);
-					break;
-				default:
-					md_error(-1, "!! unsupported VARNAME type during jasmin generation, this should never happen");
+				jasmin_println("aload_0 ; load <this>");
+				jasmin_print("\tgetfield '%s/%s' ", expr->bind_var->parent.class->id, expr->bind_var->id);
+				jasmin_print_type(expr->bind_var->type);
+				jasmin_print("\n");
+			}
+			else
+			{
+				switch(expr->bind_var->type.type)
+				{
+					case VAR_INT:
+					case VAR_BOOL:
+						jasmin_println("iload %d ; load %s", expr->bind_var->var_reg, expr->bind_var->id);
+						break;
+					case VAR_INT_ARRAY:
+					case VAR_CLASS:
+						jasmin_println("aload %d ; load %s", expr->bind_var->var_reg, expr->bind_var->id);
+						break;
+					default:
+						md_error(-1, "!! unsupported VARNAME type during jasmin generation, this should never happen");
+				}
 			}
 			break;
 		}
@@ -87,9 +97,9 @@ void jasmin_expr(ast_expr *expr)
 			jasmin_println("ixor"); // 0=>1, 1=>0
 			break;
 		case NEW_CLASS:
-			jasmin_println("new %s", expr->id);
+			jasmin_println("new '%s'", expr->id);
 			jasmin_println("dup");
-			jasmin_println("invokespecial %s/<init>()V", expr->id);
+			jasmin_println("invokespecial '%s/<init>()V'", expr->id);
 			break;
 		case NEW_INT_ARRAY:
 			jasmin_expr(expr->expr);
@@ -97,7 +107,7 @@ void jasmin_expr(ast_expr *expr)
 			break;
 		case ARRAY_LENGTH:
 			jasmin_expr(expr->expr);
-			jasmin_print("arraylength");
+			jasmin_println("arraylength");
 			break;
 		case ARRAY_INDEX:
 			jasmin_expr(expr->array);
@@ -113,11 +123,11 @@ void jasmin_expr(ast_expr *expr)
 			for(params = expr->exp_list; params != NULL; params = params->next)
 				jasmin_expr(params);
 
-			jasmin_print("\tinvokevirtual %s/%s(", expr->object->expr_type.classname, expr->method);
+			jasmin_print("\tinvokevirtual '%s/%s(", expr->object->expr_type.classname, expr->method);
 			jasmin_print_params(expr->bind_method->params);
 			jasmin_print(")");
 			jasmin_print_type(expr->bind_method->type);
-			jasmin_print("\n");
+			jasmin_print("'\n");
 		}
 			break;
 		case BINOP:
@@ -219,28 +229,47 @@ void jasmin_statements(ast_stmt *stmt)
 			break;
 		case VAR_ASSIGN:
 		{
-			jasmin_expr(stmt->assign_expr);
-			switch(stmt->bind->type.type)
+			if(stmt->bind->parent.type == SYM_CLASS)
 			{
-				case VAR_BOOL:
-				case VAR_INT:
-					jasmin_println("istore %d ; store %s", stmt->bind->var_reg, stmt->bind->id);
-					break;
-				case VAR_INT_ARRAY:
-				case VAR_CLASS:
-					jasmin_println("astore %d ; store %s", stmt->bind->var_reg, stmt->bind->id);
-					break;
-				default:
-					md_error(-1, "!! unsupported VAR_ASSIGN type during jasmin generation, this should never happen");
+				jasmin_println("aload_0 ; load <this>");
+				jasmin_expr(stmt->assign_expr);
+				jasmin_print("\tputfield '%s/%s' ", stmt->bind->parent.class->id, stmt->bind->id);
+				jasmin_print_type(stmt->bind->type);
+				jasmin_print("\n");
 			}
-			jasmin_print("\n");
+			else
+			{
+				jasmin_expr(stmt->assign_expr);
+				switch(stmt->bind->type.type)
+				{
+					case VAR_BOOL:
+					case VAR_INT:
+						jasmin_println("istore %d ; store %s", stmt->bind->var_reg, stmt->bind->id);
+						break;
+					case VAR_INT_ARRAY:
+					case VAR_CLASS:
+						jasmin_println("astore %d ; store %s", stmt->bind->var_reg, stmt->bind->id);
+						break;
+					default:
+						md_error(-1, "!! unsupported VAR_ASSIGN type during jasmin generation, this should never happen");
+				}
+				jasmin_print("\n");
+			}
 			break;
 		}
 		case ARRAY_ASSIGN:
-			jasmin_println("aload %d ; load array %s", stmt->bind->var_reg, stmt->bind->id);
+			if(stmt->bind->parent.type == SYM_CLASS)
+			{
+				jasmin_println("aload_0 ; load <this>");
+				jasmin_print("\tgetfield '%s/%s' ", stmt->bind->parent.class->id, stmt->bind->id);
+				jasmin_print_type(stmt->bind->type);
+				jasmin_print("\n");
+			}
+			else
+				jasmin_println("aload %d ; load array %s", stmt->bind->var_reg, stmt->bind->id);
+
 			jasmin_expr(stmt->array_index);
 			jasmin_expr(stmt->assign_expr);
-			// iastore
 			jasmin_println("iastore");
 			jasmin_print("\n");
 			break;
@@ -269,23 +298,35 @@ void jasmin_locals(ast_methoddecl *method)
 	for(var = method->params; var != NULL; var = var->next, ++i)
 	{
 		var->bind->var_reg = i;
-		jasmin_print("\t.var %d is %s ", i, var->id);
+		jasmin_print("\t.var %d is '%s' ", i, var->id);
 		jasmin_print_type(var->type);
 		jasmin_print("\n");
 	}
 	for(var = method->var_decl; var != NULL; var = var->next, ++i)
 	{
 		var->bind->var_reg = i;
-		jasmin_print("\t.var %d is %s ", i, var->id);
+		jasmin_print("\t.var %d is '%s' ", i, var->id);
 		jasmin_print_type(var->type);
 		jasmin_print("\n");
 	}
 	fputs("\n", jasmin_file);
 }
 
+void jasmin_print_fields(ast_vardecl *field)
+{
+	while(field != NULL)
+	{
+		jasmin_print(".field '%s' ", field->id);
+		jasmin_print_type(field->type);
+		jasmin_print("\n");
+
+		field = field->next;
+	}
+}
+
 void jasmin_stacksize(ast_methoddecl *method)
 {
-	jasmin_println(".limit stack 4711");
+	jasmin_println(".limit stack 128");
 }
 
 void jasmin_method_body(ast_methoddecl *method)
@@ -341,8 +382,8 @@ void jasmin_mainclass()
 	if(jasmin_file == NULL)
 		md_error(-1, "couldn't open file '%s' for writing.", filename);
 
-	jasmin_println(".source %s.j", md_ast.main_class.id);
-	jasmin_println(".class %s", md_ast.main_class.id);
+	jasmin_println(".source '%s.java'", md_filename);
+	jasmin_println(".class '%s'", md_ast.main_class.id);
 	jasmin_println(".super java/lang/Object");
 	jasmin_println("\n.method public <init>()V");
 	indent = 1;
@@ -375,9 +416,12 @@ void jasmin_classes(ast_classdecl *class)
 
 	label_count = 0;
 
-	jasmin_println(".source %s.j", class->id);
-	jasmin_println(".class %s", class->id);
+	jasmin_println(".source '%s.java'", md_filename);
+	jasmin_println(".class '%s'", class->id);
 	jasmin_println(".super java/lang/Object");
+
+	jasmin_print_fields(class->fields);
+
 	jasmin_println("\n.method public <init>()V");
 	indent = 1;
 		jasmin_println("aload_0");

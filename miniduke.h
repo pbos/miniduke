@@ -11,5 +11,7 @@ void md_error(int lineno, const char *error, ...);
 extern ast_program md_ast;
 extern symtab_program md_symtab;
 
+extern char *md_filename;
+
 #endif
 

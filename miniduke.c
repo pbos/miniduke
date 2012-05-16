@@ -10,14 +10,14 @@
 
 extern int yyparse();
 
-char *filename = NULL;
+char *md_filename = NULL;
 
 ast_program md_ast;
 symtab_program md_symtab;
 
 void md_error(int lineno, const char *error, ...)
 {
-	fprintf(stderr, "%s:%d: ", filename, lineno);
+	fprintf(stderr, "%s:%d: ", md_filename, lineno);
 	va_list args;
 	va_start (args, error);
 	vfprintf (stderr, error, args);
@@ -54,10 +54,10 @@ void parse_args(int argc, char *argv[])
 			out_dir = argv[i];
 			continue;
 		}
-		if(filename != NULL)
+		if(md_filename != NULL)
 			usage();
 
-		filename = argv[i];
+		md_filename = argv[i];
 	}
 }
 
@@ -89,10 +89,10 @@ int main(int argc, char *argv[])
 {
 	parse_args(argc, argv);
 
-	if(filename == NULL)
+	if(md_filename == NULL)
 		usage();
 
-	yyin = fopen(filename, "r");
+	yyin = fopen(md_filename, "r");
 	if(yyin == NULL)
 	{
 		fprintf(stderr, "%s: ", argv[1]);
@@ -106,9 +106,9 @@ int main(int argc, char *argv[])
 		chdir(out_dir);
 
 	// discard directory path and ".java" part
-	filename = basename(filename);
-	char out_filename[strlen(filename) + 16]; // +16 should be enough for all sane file endings
-	sprintf(out_filename, "%s.syntax", filename);
+	md_filename = basename(md_filename);
+	char out_filename[strlen(md_filename) + 16]; // +16 should be enough for all sane file endings
+	sprintf(out_filename, "%s.syntax", md_filename);
 
 	FILE *out_file = fopen(out_filename, "w");
 	if(out_file)
@@ -125,7 +125,7 @@ int main(int argc, char *argv[])
 
 	ast_bind();
 
-	sprintf(out_filename, "%s.symtab", filename);
+	sprintf(out_filename, "%s.symtab", md_filename);
 
 	out_file = fopen(out_filename, "w");
 	if(out_file)

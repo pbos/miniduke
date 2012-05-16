@@ -29,6 +29,8 @@ typedef struct symtab_var
 
 	symtab_parent parent;
 
+	int var_reg; // used by jasmin
+
 	struct symtab_var *next;
 } symtab_var;
 

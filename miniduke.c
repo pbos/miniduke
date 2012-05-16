@@ -12,6 +12,8 @@ extern int yyparse();
 
 char *md_filename = NULL;
 
+int only_asm = 0;
+
 ast_program md_ast;
 symtab_program md_symtab;
 
@@ -52,6 +54,11 @@ void parse_args(int argc, char *argv[])
 			}
 
 			out_dir = argv[i];
+			continue;
+		}
+		if(!strcmp(argv[i], "-S"))
+		{
+			only_asm = 1;
 			continue;
 		}
 		if(md_filename != NULL)
@@ -108,16 +115,19 @@ int main(int argc, char *argv[])
 	// discard directory path and ".java" part
 	md_filename = basename(md_filename);
 	char out_filename[strlen(md_filename) + 16]; // +16 should be enough for all sane file endings
-	sprintf(out_filename, "%s.syntax", md_filename);
-
-	FILE *out_file = fopen(out_filename, "w");
-	if(out_file)
+	FILE *out_file;
+	if(!only_asm)
 	{
-		ast_program_print(out_file, 0, &md_ast);
-		fclose(out_file);
+		sprintf(out_filename, "%s.syntax", md_filename);
+		out_file = fopen(out_filename, "w");
+		if(out_file)
+		{
+			ast_program_print(out_file, 0, &md_ast);
+			fclose(out_file);
+		}
+		else
+			fprintf(stderr, "warning: couldn't open AST file '%s' for writing.\n", out_filename);
 	}
-	else
-		fprintf(stderr, "warning: couldn't open AST file '%s' for writing.\n", out_filename);
 
 	symtab_init();
 
@@ -125,16 +135,19 @@ int main(int argc, char *argv[])
 
 	ast_bind();
 
-	sprintf(out_filename, "%s.symtab", md_filename);
 
-	out_file = fopen(out_filename, "w");
-	if(out_file)
+	if(!only_asm)
 	{
-		symtab_print(out_file);
-		fclose(out_file);
+		sprintf(out_filename, "%s.symtab", md_filename);
+		out_file = fopen(out_filename, "w");
+		if(out_file)
+		{
+			symtab_print(out_file);
+			fclose(out_file);
+		}
+		else
+			fprintf(stderr, "warning: couldn't open symtab file '%s' for writing.\n", out_filename);
 	}
-	else
-		fprintf(stderr, "warning: couldn't open symtab file '%s' for writing.\n", out_filename);
 
 	jasmin_out();
 

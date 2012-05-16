@@ -8,3 +8,4 @@ minijava.output
 *.symtab
 *.j
 *.class
+output/

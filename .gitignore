@@ -4,5 +4,6 @@
 *.symtab
 *.class
 miniduke
+mjc
 output/
-build/
+src/gen/

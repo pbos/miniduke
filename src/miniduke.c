@@ -17,6 +17,8 @@ int only_asm = 0;
 ast_program md_ast;
 symtab_program md_symtab;
 
+int build_jasmin = 1;
+
 void md_error(int lineno, const char *error, ...)
 {
 	fprintf(stderr, "%s:%d: ", md_filename, lineno);
@@ -54,6 +56,11 @@ void parse_args(int argc, char *argv[])
 			}
 
 			out_dir = argv[i];
+			continue;
+		}
+		if(!strcmp(argv[i], "JVM"))
+		{
+			build_jasmin = 1;
 			continue;
 		}
 		if(!strcmp(argv[i], "-S"))
@@ -149,7 +156,8 @@ int main(int argc, char *argv[])
 			fprintf(stderr, "warning: couldn't open symtab file '%s' for writing.\n", out_filename);
 	}
 
-	jasmin_out();
+	if(build_jasmin)
+		jasmin_out();
 
 	return 0;
 }

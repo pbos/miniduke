@@ -1,0 +1,33 @@
+<project name="Minijava Compiler" default="gcc" basedir=".">
+    <description>
+        A compiler for the Minijava Language
+    </description>
+
+  <target name="gcc" description="ALL the things" >
+    <exec dir="." executable="gcc">
+		<arg line="-g"/>
+
+		<arg line="-Wall"/>
+
+		<arg line="-o"/>
+		<arg line="mjc"/>
+
+		<arg line="-I"/>
+		<arg line="src/"/>
+
+		<arg line="src/ast_bind.c"/>
+		<arg line="src/ast.c"/>
+		<arg line="src/jasmin.c"/>
+		<arg line="src/miniduke.c"/>
+		<arg line="src/symtab.c"/>
+		<arg line="src/typecheck.c"/>
+
+		<arg line="-I"/>
+		<arg line="src/gen/"/>
+
+		<arg line="src/gen/lex.yy.c"/>
+		<arg line="src/gen/minijava.tab.c"/>
+	</exec>
+  </target>
+
+</project>

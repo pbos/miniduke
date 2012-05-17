@@ -1,11 +1,8 @@
 *.swp
-miniduke
-lex.yy.c
-minijava.tab.h
-minijava.tab.c
-minijava.output
+*.j
 *.syntax
 *.symtab
-*.j
 *.class
+miniduke
 output/
+build/

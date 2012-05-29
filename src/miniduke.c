@@ -7,6 +7,7 @@
 #include <unistd.h> //chdir for -o
 
 #include "jasmin.h"
+#include "ir.h"
 
 extern int yyparse();
 
@@ -16,8 +17,10 @@ int only_asm = 0;
 
 ast_program md_ast;
 symtab_program md_symtab;
+ir_program md_ir;
 
-int build_jasmin = 1;
+int build_jasmin = 0;
+int build_arm = 1;
 
 void md_error(int lineno, const char *error, ...)
 {
@@ -61,6 +64,11 @@ void parse_args(int argc, char *argv[])
 		if(!strcmp(argv[i], "JVM"))
 		{
 			build_jasmin = 1;
+			continue;
+		}
+		if(!strcmp(argv[i], "ARM"))
+		{
+			build_arm = 1;
 			continue;
 		}
 		if(!strcmp(argv[i], "-S"))
@@ -157,7 +165,12 @@ int main(int argc, char *argv[])
 	}
 
 	if(build_jasmin)
+	{
 		jasmin_out();
+		return 0;
+	}
+
+	ir_init();
 
 	return 0;
 }

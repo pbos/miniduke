@@ -9,5 +9,5 @@ void ir_init()
 
 void ir_print(FILE *file)
 {
-	fputs("yo\n", file);
+	md_error(0, "ir output not done!");
 }

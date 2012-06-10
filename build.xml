@@ -21,6 +21,7 @@
 		<arg line="src/miniduke.c"/>
 		<arg line="src/symtab.c"/>
 		<arg line="src/typecheck.c"/>
+		<arg line="src/ir.c"/>
 
 		<arg line="-I"/>
 		<arg line="src/gen/"/>

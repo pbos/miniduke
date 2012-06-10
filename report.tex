@@ -191,5 +191,97 @@ compile almost instantly. Most of the time spent running the tests was either
 on execution or assembling the Jasmin source, and not compiling the actual
 source code.
 
+\clearpage
+
+\section*{Feedback}
+
+\emph{The following section is for feedback and general thoughts of Pedro de
+Carvalho Gomez' MiniJava-compiler submission and follows the layout of his
+report.}
+
+\subsection*{Lexing}
+
+Unsurprisingly JFlex' format looks similar to Flex. The format is annotated in
+a way which is really easy to follow. It's also well commented.
+
+The use of {\tt yytext()} values for symbols other than IDs and int/longs are
+slightly confusing, as there is a constructor which takes no value, which
+should be appropriate for reserved words and operators, where the text doesn't
+differ. If the value variable was required, then the symbol method without
+value declared could have used yytext by default. This keeps the method calls
+smaller and easier to read.
+
+Solving integer length in the lexing step is good. I would suggest matching
+{\tt [1-9][0-9]*} generating the error from {\tt \{code blocks\}} instead of
+having a complex regex matching it. The error could easily be generated if
+{\tt Integer.parseInt()} fails to parse the int instead of having two cases for
+good ints and overflowing ones.
+
+I would also suggest a simple {\tt private void dbg(String msg);} method for
+all the optional debug printing, {\tt dbg("CLASS"); } doesn't interfere as much
+with readability as all these if-cases, and more importantly it's best to keep
+code DRY.
+
+\subsection*{Parsing}
+
+Parsing is also straightforward. I like the uniform handling of {\tt this} as
+any other variable and not generating a special node for it. If some of the
+typecasting could have been avoided (Exp) ex1, by annotating types for all
+rules, it would have been nicer. But it's really simple and generates a natural
+AST structure.
+
+The parser also has an interesting technique of unreserving main as a keyword,
+by having an ID-identifying rule match both the terminal ID and the terminal
+MAIN, they both generate expression IDs. As main isn't really a reserved
+keyword, I would have preferred this to remain an id, have the MainClass rule
+match ids, and assert that the public-static main method is really called main.
+This would more naturally resemble that it really isn't a keyword. Still, it
+was a nice trick to see done none the less.
+
+The precedence declaration for {\tt if-else} is really clean and is declared
+just like operator precedence.
+
+\subsection*{Semantic Analysis}
+
+Symbol-table structure also seems straightforward. A class represents a class,
+method a method, so on, and so forth.
+
+Instead of doing {\tt if(found\_error)} checks, the typecheck could have thrown
+exceptions etc. This would have avoided generally unhelpful errors like ``Found
+errors. Leaving''. When not using exceptions however, the compiler could have
+done more checks and reported more errors before exiting (e.g. only check for
+errors when the typecheck returns). Exceptions not being thrown relates mostly
+to the TCVisitor code at least. A more top-level catch could handle printing
+of the errors and not have such nested code.
+
+The isCompatible method comparison is clean. It could have been made a tad
+shorter by doing {\tt return a.equals(b);} and {\tt return isSubtype(a,b);}
+respectively.
+
+The name `accept' is a bit confusing. It's a bit hard at first to understand
+what's going on with calls like {\tt n.sl.elementAt(i).accept(this);} because
+accept isn't really descriptive of anything.
+
+The code for semantic analysis is well structured, albeit a bit long. Code that
+checks if both operators are of a certain type could have been put into a
+method to avoid code repetition. Something like {\tt assert\_type(expl, "int",
+expr, "int", cur\_class, cur\_method);} for example would do. Rewrites like
+this would reduce code size drastically. The typechecks for many operators are
+similar, so clumping <, <=, >, >= into a tighter check would be a good idea. It
+would also make the code more maintainable and easier to change. As of now, the
+classes TCVisitor, SymTable and SymVisitor are 1700 lines, which could probably
+be at least halved, giving easier-to-grasp code.
+
+\subsection*{Instruction Selection/MiniJava}
+
+The separation of JasminClass and InstVisitor was appreciated. The idea of
+separating utilities from the actual visitor was nice. Otherwise the visit-
+model is easy to follow, except for the usage of `accept', which takes some
+time to understand what it does.
+
+One upper bound for calculating the maximum size of the stack can be done by
+checking AST depth. This was not done by myself either though, but suggested by
+Torbjörn.
+
 \end{document}
 
